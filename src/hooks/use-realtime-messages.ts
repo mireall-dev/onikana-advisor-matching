@@ -35,7 +35,7 @@ export function useRealtimeMessages(requestId: string) {
           table: "messages",
           filter: `request_id=eq.${requestId}`,
         },
-        async (payload) => {
+        async (payload: { new: { id: string } }) => {
           const { data: newMessage } = await supabase
             .from("messages")
             .select("*, sender:users!sender_id(*)")

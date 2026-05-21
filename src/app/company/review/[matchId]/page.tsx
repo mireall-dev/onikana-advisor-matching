@@ -125,7 +125,7 @@ export default function ReviewPage({
 
       if (allReviews && allReviews.length > 0) {
         const totalRating = allReviews.reduce(
-          (sum, r) => sum + r.rating,
+          (sum: number, r: { rating: number }) => sum + r.rating,
           0
         );
         const avgRating = totalRating / allReviews.length;
