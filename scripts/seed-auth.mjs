@@ -1,8 +1,20 @@
 // Create demo auth users in Supabase Auth via Admin API
 // Run: node scripts/seed-auth.mjs
+//
+// Required env vars:
+//   - SUPABASE_URL (or NEXT_PUBLIC_SUPABASE_URL)
+//   - SUPABASE_SERVICE_ROLE_KEY
 
-const SUPABASE_URL = "https://zlyaqisuvsgyvydmhrih.supabase.co";
+const SUPABASE_URL =
+  process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!SUPABASE_URL) {
+  console.error(
+    "SUPABASE_URL (or NEXT_PUBLIC_SUPABASE_URL) env var is required"
+  );
+  process.exit(1);
+}
 
 if (!SERVICE_ROLE_KEY) {
   console.error("SUPABASE_SERVICE_ROLE_KEY env var is required");

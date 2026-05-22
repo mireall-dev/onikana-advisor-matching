@@ -19,20 +19,13 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RatingStars } from "@/components/shared/rating-stars";
+import { getInitials } from "@/lib/utils";
 import type { Match, User, AdvisorProfile } from "@/types/database";
 
 type MatchWithRelations = Match & {
   advisor: User;
   advisor_profile: AdvisorProfile;
 };
-
-function getInitials(name: string): string {
-  const parts = name.trim().split(/\s+/);
-  if (parts.length >= 2) {
-    return (parts[0][0] + parts[1][0]).toUpperCase();
-  }
-  return name.slice(0, 2).toUpperCase();
-}
 
 export default function ReviewPage({
   params,
@@ -106,7 +99,10 @@ export default function ReviewPage({
         return;
       }
 
-      // Insert review
+      // Insert review.
+      // `trigger_update_advisor_rating` in supabase/schema.sql recalculates
+      // advisor_profiles.rating_avg / rating_count automatically — do not
+      // duplicate that work from the client.
       const { error } = await supabase.from("reviews").insert({
         match_id: matchId,
         company_id: user.id,
@@ -116,28 +112,6 @@ export default function ReviewPage({
       });
 
       if (error) throw error;
-
-      // Update advisor's rating_avg and rating_count
-      const { data: allReviews } = await supabase
-        .from("reviews")
-        .select("rating")
-        .eq("advisor_id", match.advisor_id);
-
-      if (allReviews && allReviews.length > 0) {
-        const totalRating = allReviews.reduce(
-          (sum: number, r: { rating: number }) => sum + r.rating,
-          0
-        );
-        const avgRating = totalRating / allReviews.length;
-
-        await supabase
-          .from("advisor_profiles")
-          .update({
-            rating_avg: Math.round(avgRating * 10) / 10,
-            rating_count: allReviews.length,
-          })
-          .eq("user_id", match.advisor_id);
-      }
 
       toast.success("レビューを投稿しました。ありがとうございます!");
       router.push("/company/mypage");

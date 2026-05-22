@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/tooltip";
 import { RatingStars } from "@/components/shared/rating-stars";
 import { StatusBadge } from "@/components/shared/status-badge";
+import { formatHourlyRate, getInitials } from "@/lib/utils";
 import type {
   AdvisorProfile,
   User,
@@ -30,14 +31,6 @@ type ReviewWithRelations = Review & {
   company: User;
   company_profile: CompanyProfile;
 };
-
-function getInitials(name: string): string {
-  const parts = name.trim().split(/\s+/);
-  if (parts.length >= 2) {
-    return (parts[0][0] + parts[1][0]).toUpperCase();
-  }
-  return name.slice(0, 2).toUpperCase();
-}
 
 function formatDate(dateStr: string): string {
   const date = new Date(dateStr);
@@ -160,18 +153,21 @@ export default function AdvisorDetailPage({
                 {advisor.catchphrase && (
                   <p className="mt-1 text-[#6B7280]">{advisor.catchphrase}</p>
                 )}
-                <div className="mt-3 flex items-center gap-3">
+                <div className="mt-3 flex flex-wrap items-center gap-3">
                   <StatusBadge status={advisor.status} />
                   <RatingStars
                     rating={advisor.rating_avg}
                     count={advisor.rating_count}
                     size="sm"
                   />
+                  <span className="inline-flex items-center gap-1 rounded-full bg-white/70 px-3 py-0.5 text-xs font-medium text-[#0F569D] ring-1 ring-[#0F569D]/20">
+                    参考報酬 {formatHourlyRate(advisor.hourly_rate)}
+                  </span>
                 </div>
               </div>
             </div>
 
-            <div className="shrink-0">
+            <div className="hidden shrink-0 md:block">
               {isAccepting ? (
                 <Button
                   className="bg-[#0F569D] text-white hover:bg-[#0A3D6E]"
@@ -420,6 +416,27 @@ export default function AdvisorDetailPage({
             </TabsContent>
           </Tabs>
         </div>
+      </div>
+
+      {/* Mobile sticky CTA */}
+      <div className="sticky bottom-0 z-40 border-t border-[#E5E7EB] bg-white/90 px-4 py-3 shadow-[0_-4px_12px_rgba(0,0,0,0.04)] backdrop-blur md:hidden">
+        {isAccepting ? (
+          <Button
+            className="w-full bg-[#0F569D] text-white hover:bg-[#0A3D6E]"
+            onClick={() => router.push(`/company/request/${advisor.id}`)}
+          >
+            <CalendarCheck className="mr-2 size-4" />
+            面談をリクエストする
+          </Button>
+        ) : (
+          <Button
+            className="w-full bg-[#0F569D] text-white opacity-50"
+            disabled
+          >
+            <CalendarCheck className="mr-2 size-4" />
+            現在受付停止中です
+          </Button>
+        )}
       </div>
     </div>
   );

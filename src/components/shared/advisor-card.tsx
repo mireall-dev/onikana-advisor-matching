@@ -3,18 +3,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { RatingStars } from "@/components/shared/rating-stars";
 import { StatusBadge } from "@/components/shared/status-badge";
+import { formatHourlyRate, getInitials } from "@/lib/utils";
 import type { AdvisorProfile, User } from "@/types/database";
 
 interface AdvisorCardProps {
   advisor: AdvisorProfile & { user: User };
-}
-
-function getInitials(name: string): string {
-  const parts = name.trim().split(/\s+/);
-  if (parts.length >= 2) {
-    return (parts[0][0] + parts[1][0]).toUpperCase();
-  }
-  return name.slice(0, 2).toUpperCase();
 }
 
 export function AdvisorCard({ advisor }: AdvisorCardProps) {
@@ -76,6 +69,13 @@ export function AdvisorCard({ advisor }: AdvisorCardProps) {
             size="sm"
           />
           <StatusBadge status={advisor.status} />
+        </div>
+
+        <div className="mt-3 flex items-center justify-between border-t border-[#F1F5F9] pt-3">
+          <span className="text-xs text-[#6B7280]">参考報酬</span>
+          <span className="text-sm font-semibold text-[#0F569D]">
+            {formatHourlyRate(advisor.hourly_rate)}
+          </span>
         </div>
       </div>
     </Link>

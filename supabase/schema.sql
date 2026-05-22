@@ -159,8 +159,15 @@ CREATE POLICY "Company profiles are viewable by everyone" ON public.company_prof
 CREATE POLICY "Company can update own profile" ON public.company_profiles FOR UPDATE USING (auth.uid() = user_id);
 CREATE POLICY "Company can insert own profile" ON public.company_profiles FOR INSERT WITH CHECK (auth.uid() = user_id);
 
--- Advisor Profiles: Approved ones are viewable by everyone, owner can update
-CREATE POLICY "Approved advisor profiles are viewable" ON public.advisor_profiles FOR SELECT USING (true);
+-- Advisor Profiles:
+--   - approved profiles are viewable by everyone
+--   - owner can always view/update their own profile (incl. pending/rejected)
+--   - admin can view all profiles
+CREATE POLICY "Approved advisor profiles are viewable" ON public.advisor_profiles FOR SELECT USING (
+  approval_status = 'approved'
+  OR auth.uid() = user_id
+  OR EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin')
+);
 CREATE POLICY "Advisor can update own profile" ON public.advisor_profiles FOR UPDATE USING (auth.uid() = user_id);
 CREATE POLICY "Advisor can insert own profile" ON public.advisor_profiles FOR INSERT WITH CHECK (auth.uid() = user_id);
 
@@ -203,11 +210,32 @@ CREATE POLICY "Participants can send messages" ON public.messages FOR INSERT WIT
   )
 );
 
--- Reviews: Everyone can view, company can create for matched advisors
+-- Reviews:
+--   - viewable by everyone
+--   - INSERT allowed only when the reviewer is the company side of a fully
+--     matched record (m.is_matched = true AND m.company_id = auth.uid()),
+--     and the row's advisor_id matches the match's advisor_id.
 CREATE POLICY "Reviews are viewable by everyone" ON public.reviews FOR SELECT USING (true);
-CREATE POLICY "Company can create reviews" ON public.reviews FOR INSERT WITH CHECK (auth.uid() = company_id);
+CREATE POLICY "Company can create reviews" ON public.reviews FOR INSERT WITH CHECK (
+  auth.uid() = company_id
+  AND EXISTS (
+    SELECT 1 FROM public.matches m
+    WHERE m.id = match_id
+      AND m.is_matched = TRUE
+      AND m.company_id = auth.uid()
+      AND m.advisor_id = reviews.advisor_id
+  )
+);
 
--- Payments: Participants and admin can view
+-- Payments:
+--   - participants and admin can view
+--   - INSERT/UPDATE are server-only paths:
+--     * /api/stripe/create-payment (server-side createClient) must run with
+--       service_role bypassing RLS, OR be re-implemented to use a Postgres
+--       function with SECURITY DEFINER.
+--     * /api/stripe/webhook uses service_role and bypasses RLS.
+--   No anon/authenticated INSERT/UPDATE policies are declared, which is
+--   equivalent to denying those calls.
 CREATE POLICY "Participants can view payments" ON public.payments FOR SELECT USING (
   EXISTS (
     SELECT 1 FROM public.matches m
@@ -215,8 +243,6 @@ CREATE POLICY "Participants can view payments" ON public.payments FOR SELECT USI
   ) OR
   EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin')
 );
-CREATE POLICY "System can manage payments" ON public.payments FOR INSERT WITH CHECK (true);
-CREATE POLICY "System can update payments" ON public.payments FOR UPDATE USING (true);
 
 -- =============================================
 -- Admin override policies
