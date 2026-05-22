@@ -12,11 +12,14 @@ function hasSupabaseEnv(): boolean {
 type ServerSupabaseClient = ReturnType<typeof createServerClient>;
 
 export async function createClient(): Promise<ServerSupabaseClient> {
+  const cookieStore = await cookies();
+
   if (!hasSupabaseEnv()) {
-    return createMockClient() as unknown as ServerSupabaseClient;
+    return createMockClient({
+      getCookie: (name) => cookieStore.get(name)?.value,
+    }) as unknown as ServerSupabaseClient;
   }
 
-  const cookieStore = await cookies();
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
