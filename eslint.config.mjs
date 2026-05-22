@@ -13,6 +13,14 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
+  {
+    rules: {
+      // React 19 strict rule that flags the common "fetch-then-setState in
+      // useEffect" pattern used across every client page in this codebase.
+      // TODO: migrate to Server Components / Suspense and re-enable as error.
+      "react-hooks/set-state-in-effect": "warn",
+    },
+  },
 ]);
 
 export default eslintConfig;

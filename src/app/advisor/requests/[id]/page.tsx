@@ -58,6 +58,7 @@ export default function RequestDetailPage({
   const [companyProfile, setCompanyProfile] = useState<CompanyProfile | null>(
     null
   );
+  const [advisorConfirmed, setAdvisorConfirmed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
@@ -90,6 +91,14 @@ export default function RequestDetailPage({
     if (cpData) {
       setCompanyProfile(cpData as CompanyProfile);
     }
+
+    const { data: matchData } = await supabase
+      .from("matches")
+      .select("advisor_confirmed")
+      .eq("request_id", reqData.id)
+      .single();
+
+    setAdvisorConfirmed(Boolean(matchData?.advisor_confirmed));
 
     setLoading(false);
   }, [user, id, supabase]);
@@ -171,32 +180,25 @@ export default function RequestDetailPage({
       .eq("request_id", request.id)
       .single();
 
-    if (existingMatch) {
-      const { error } = await supabase
-        .from("matches")
-        .update({ advisor_confirmed: true })
-        .eq("id", existingMatch.id);
+    const { error } = existingMatch
+      ? await supabase
+          .from("matches")
+          .update({ advisor_confirmed: true })
+          .eq("id", existingMatch.id)
+      : await supabase.from("matches").insert({
+          request_id: request.id,
+          company_id: request.company_id,
+          advisor_id: request.advisor_id,
+          advisor_confirmed: true,
+          company_confirmed: false,
+          is_matched: false,
+        });
 
-      if (error) {
-        toast.error("マッチ確認に失敗しました");
-      } else {
-        toast.success("マッチ完了を確認しました");
-      }
+    if (error) {
+      toast.error("マッチ確認に失敗しました");
     } else {
-      const { error } = await supabase.from("matches").insert({
-        request_id: request.id,
-        company_id: request.company_id,
-        advisor_id: request.advisor_id,
-        advisor_confirmed: true,
-        company_confirmed: false,
-        is_matched: false,
-      });
-
-      if (error) {
-        toast.error("マッチ確認に失敗しました");
-      } else {
-        toast.success("マッチ完了を確認しました");
-      }
+      setAdvisorConfirmed(true);
+      toast.success("マッチ完了を確認しました");
     }
 
     setActionLoading(false);
@@ -412,18 +414,25 @@ export default function RequestDetailPage({
                 <MessageSquare className="size-4" />
                 チャットを開く
               </Button>
-              <Button
-                className="gap-1 bg-[#0F569D] text-white hover:bg-[#0A3D6E]"
-                onClick={handleMatchConfirm}
-                disabled={actionLoading}
-              >
-                {actionLoading ? (
-                  <Loader2 className="mr-1 size-4 animate-spin" />
-                ) : (
+              {advisorConfirmed ? (
+                <Badge className="gap-1 border-transparent bg-green-50 px-3 py-1.5 text-sm text-green-700">
                   <CheckCircle2 className="size-4" />
-                )}
-                マッチ完了
-              </Button>
+                  マッチ確認済み
+                </Badge>
+              ) : (
+                <Button
+                  className="gap-1 bg-[#0F569D] text-white hover:bg-[#0A3D6E]"
+                  onClick={handleMatchConfirm}
+                  disabled={actionLoading}
+                >
+                  {actionLoading ? (
+                    <Loader2 className="mr-1 size-4 animate-spin" />
+                  ) : (
+                    <CheckCircle2 className="size-4" />
+                  )}
+                  マッチ完了
+                </Button>
+              )}
             </CardContent>
           </Card>
         )}

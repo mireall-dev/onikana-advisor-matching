@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { z } from "zod";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
@@ -25,6 +26,30 @@ import {
   type AdvisorAchievement,
 } from "@/types/database";
 
+const achievementSchema = z.object({
+  company: z.string().trim().min(1, "企業名を入力してください").max(120),
+  description: z.string().trim().min(1, "説明を入力してください").max(500),
+  result: z.string().trim().max(500),
+});
+
+const profileSchema = z.object({
+  displayName: z.string().trim().min(1, "表示名を入力してください").max(60),
+  catchphrase: z.string().trim().max(80),
+  industries: z.array(z.enum(INDUSTRIES)).max(INDUSTRIES.length),
+  specialties: z.array(z.enum(SPECIALTIES)).max(SPECIALTIES.length),
+  areas: z.array(z.enum(AREAS)).max(AREAS.length),
+  careerSummary: z.string().trim().max(2000),
+  connections: z.string().trim().max(1000),
+  hourlyRate: z
+    .number({ message: "数値で入力してください" })
+    .int("整数で入力してください")
+    .min(0, "0以上で入力してください")
+    .max(1_000_000, "1,000,000円以下で入力してください"),
+  achievements: z.array(achievementSchema).max(20, "実績は20件までです"),
+});
+
+type ProfileErrors = Partial<Record<keyof z.infer<typeof profileSchema>, string>>;
+
 export default function AdvisorProfileEditPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
@@ -32,6 +57,7 @@ export default function AdvisorProfileEditPage() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState<ProfileErrors>({});
 
   // Form state
   const [displayName, setDisplayName] = useState("");
@@ -125,25 +151,52 @@ export default function AdvisorProfileEditPage() {
   async function handleSave() {
     if (!user || saving) return;
 
+    setErrors({});
+
+    const result = profileSchema.safeParse({
+      displayName,
+      catchphrase,
+      industries: selectedIndustries,
+      specialties: selectedSpecialties,
+      areas: selectedAreas,
+      careerSummary,
+      connections,
+      hourlyRate,
+      achievements,
+    });
+
+    if (!result.success) {
+      const fieldErrors: ProfileErrors = {};
+      for (const issue of result.error.issues) {
+        const field = issue.path[0] as keyof ProfileErrors | undefined;
+        if (field && !fieldErrors[field]) {
+          fieldErrors[field] = issue.message;
+        }
+      }
+      setErrors(fieldErrors);
+      toast.error("入力内容を確認してください");
+      return;
+    }
+
     setSaving(true);
 
     const [profileRes, userRes] = await Promise.all([
       supabase
         .from("advisor_profiles")
         .update({
-          catchphrase,
-          industries: selectedIndustries,
-          specialties: selectedSpecialties,
-          areas: selectedAreas,
-          career_summary: careerSummary,
-          connections,
-          hourly_rate: hourlyRate,
-          achievements,
+          catchphrase: result.data.catchphrase,
+          industries: result.data.industries,
+          specialties: result.data.specialties,
+          areas: result.data.areas,
+          career_summary: result.data.careerSummary,
+          connections: result.data.connections,
+          hourly_rate: result.data.hourlyRate,
+          achievements: result.data.achievements,
         })
         .eq("user_id", user.id),
       supabase
         .from("users")
-        .update({ display_name: displayName })
+        .update({ display_name: result.data.displayName })
         .eq("id", user.id),
     ]);
 
@@ -195,7 +248,11 @@ export default function AdvisorProfileEditPage() {
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
                   placeholder="表示名を入力"
+                  className={errors.displayName ? "border-[#D42027]" : ""}
                 />
+                {errors.displayName && (
+                  <p className="text-[#D42027] text-sm">{errors.displayName}</p>
+                )}
               </div>
 
               {/* Catchphrase */}
@@ -206,7 +263,11 @@ export default function AdvisorProfileEditPage() {
                   value={catchphrase}
                   onChange={(e) => setCatchphrase(e.target.value)}
                   placeholder="あなたの強みを一言で表現してください"
+                  className={errors.catchphrase ? "border-[#D42027]" : ""}
                 />
+                {errors.catchphrase && (
+                  <p className="text-[#D42027] text-sm">{errors.catchphrase}</p>
+                )}
               </div>
 
               {/* Industries */}
@@ -281,7 +342,11 @@ export default function AdvisorProfileEditPage() {
                   onChange={(e) => setCareerSummary(e.target.value)}
                   rows={6}
                   placeholder="これまでの経歴や実績を記述してください"
+                  className={errors.careerSummary ? "border-[#D42027]" : ""}
                 />
+                {errors.careerSummary && (
+                  <p className="text-[#D42027] text-sm">{errors.careerSummary}</p>
+                )}
               </div>
 
               {/* Connections */}
@@ -293,7 +358,11 @@ export default function AdvisorProfileEditPage() {
                   onChange={(e) => setConnections(e.target.value)}
                   rows={3}
                   placeholder="紹介可能な人脈について記述してください"
+                  className={errors.connections ? "border-[#D42027]" : ""}
                 />
+                {errors.connections && (
+                  <p className="text-[#D42027] text-sm">{errors.connections}</p>
+                )}
               </div>
 
               {/* Hourly Rate */}
@@ -312,11 +381,14 @@ export default function AdvisorProfileEditPage() {
                       )
                     }
                     placeholder="10000"
-                    className="max-w-48"
+                    className={`max-w-48 ${errors.hourlyRate ? "border-[#D42027]" : ""}`}
                     min={0}
                   />
                   <span className="text-sm text-[#6B7280]">円/時間</span>
                 </div>
+                {errors.hourlyRate && (
+                  <p className="text-[#D42027] text-sm">{errors.hourlyRate}</p>
+                )}
               </div>
 
               {/* Achievements */}

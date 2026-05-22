@@ -12,3 +12,9 @@ export function getStripe(): Stripe {
 }
 
 export const MATCH_SUCCESS_FEE = 50000; // 50,000 yen
+
+export function hasStripeServerEnv(): boolean {
+  return Boolean(
+    process.env.STRIPE_SECRET_KEY && process.env.STRIPE_WEBHOOK_SECRET
+  );
+}

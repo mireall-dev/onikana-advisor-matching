@@ -20,6 +20,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatusBadge } from "@/components/shared/status-badge";
+import { MatchStepper, type MatchStep } from "@/components/shared/match-stepper";
+import { getInitials } from "@/lib/utils";
 import type {
   MeetingRequest,
   Match,
@@ -37,14 +39,6 @@ type MatchWithRelations = Match & {
   advisor_profile: Pick<AdvisorProfile, "user_id" | "catchphrase">;
 };
 
-function getInitials(name: string): string {
-  const parts = name.trim().split(/\s+/);
-  if (parts.length >= 2) {
-    return (parts[0][0] + parts[1][0]).toUpperCase();
-  }
-  return name.slice(0, 2).toUpperCase();
-}
-
 function formatDate(dateStr: string): string {
   const date = new Date(dateStr);
   return date.toLocaleDateString("ja-JP", {
@@ -57,6 +51,19 @@ function formatDate(dateStr: string): string {
 function truncateText(text: string, maxLen: number): string {
   if (text.length <= maxLen) return text;
   return text.slice(0, maxLen) + "...";
+}
+
+function deriveStep(
+  request: { status: string },
+  match: { is_matched: boolean; payment_status: string } | undefined
+): MatchStep {
+  if (request.status === "pending") return "requested";
+  if (request.status === "rejected") return "requested";
+  // approved
+  if (!match) return "approved";
+  if (!match.is_matched) return "approved";
+  if (match.payment_status !== "paid") return "matched";
+  return "paid";
 }
 
 type TabFilter = "all" | "pending" | "approved" | "rejected";
@@ -119,6 +126,9 @@ export default function MyPage() {
     try {
       const supabase = createClient();
 
+      // company_confirmed のみ更新する。両者確認時に is_matched/matched_at を
+      // セットするのは DB トリガー `check_match_completion` の責務なので、
+      // クライアント側では同じ列を二重に更新しない。
       const { error } = await supabase
         .from("matches")
         .update({ company_confirmed: true })
@@ -126,30 +136,9 @@ export default function MyPage() {
 
       if (error) throw error;
 
-      // Check if both sides confirmed
-      const { data: updatedMatch } = await supabase
-        .from("matches")
-        .select("*")
-        .eq("id", matchId)
-        .single();
-
-      if (
-        updatedMatch &&
-        updatedMatch.company_confirmed &&
-        updatedMatch.advisor_confirmed
-      ) {
-        await supabase
-          .from("matches")
-          .update({
-            is_matched: true,
-            matched_at: new Date().toISOString(),
-          })
-          .eq("id", matchId);
-      }
-
       toast.success("マッチ完了を確認しました。");
       await fetchData();
-    } catch (err) {
+    } catch {
       toast.error("エラーが発生しました。再度お試しください。");
     } finally {
       setConfirmingMatchId(null);
@@ -356,27 +345,41 @@ export default function MyPage() {
                                             <Star className="mr-1.5 size-3.5" />
                                             レビューを書く
                                           </Button>
-                                          <Badge
-                                            className={
-                                              match.payment_status === "paid"
-                                                ? "bg-green-50 text-green-700 border-transparent"
-                                                : "bg-amber-50 text-amber-700 border-transparent"
-                                            }
-                                          >
-                                            <CreditCard className="mr-1 size-3" />
-                                            {match.payment_status === "paid"
-                                              ? "決済済み"
-                                              : match.payment_status ===
-                                                  "failed"
-                                                ? "決済失敗"
-                                                : "未決済"}
-                                          </Badge>
+                                          {match.payment_status === "paid" ? (
+                                            <Badge className="bg-green-50 text-green-700 border-transparent">
+                                              <CreditCard className="mr-1 size-3" />
+                                              決済済み
+                                            </Badge>
+                                          ) : (
+                                            <Button
+                                              size="sm"
+                                              className="bg-[#0F569D] text-white hover:bg-[#0A3D6E]"
+                                              onClick={() =>
+                                                router.push(
+                                                  `/company/payment/${match.id}`
+                                                )
+                                              }
+                                            >
+                                              <CreditCard className="mr-1.5 size-3.5" />
+                                              {match.payment_status === "failed"
+                                                ? "再決済"
+                                                : "決済する"}
+                                            </Button>
+                                          )}
                                         </div>
                                       )}
                                     </>
                                   )}
                                 </div>
                               </div>
+
+                              {request.status !== "rejected" && (
+                                <div className="mt-5 border-t border-[#F1F5F9] pt-4">
+                                  <MatchStepper
+                                    current={deriveStep(request, match)}
+                                  />
+                                </div>
+                              )}
                             </CardContent>
                           </Card>
                         );

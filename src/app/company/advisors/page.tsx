@@ -223,10 +223,14 @@ export default function AdvisorsPage() {
     }
 
     // Sort
-    query = query.order(
-      sortBy === "rating" ? "rating_avg" : "created_at",
-      { ascending: false }
-    );
+    const sortConfig: Record<string, { col: string; asc: boolean }> = {
+      rating: { col: "rating_avg", asc: false },
+      newest: { col: "created_at", asc: false },
+      rate_asc: { col: "hourly_rate", asc: true },
+      rate_desc: { col: "hourly_rate", asc: false },
+    };
+    const sort = sortConfig[sortBy] ?? sortConfig.rating;
+    query = query.order(sort.col, { ascending: sort.asc });
 
     const { data } = await query;
 
@@ -239,6 +243,12 @@ export default function AdvisorsPage() {
   useEffect(() => {
     fetchAdvisors();
   }, [fetchAdvisors]);
+
+  const activeFilterCount =
+    filters.industries.length +
+    filters.specialties.length +
+    filters.areas.length +
+    (filters.acceptingOnly ? 1 : 0);
 
   function clearFilters() {
     setFilters({
@@ -295,6 +305,11 @@ export default function AdvisorsPage() {
                 >
                   <SlidersHorizontal className="mr-2 size-4" />
                   フィルター
+                  {activeFilterCount > 0 && (
+                    <span className="ml-1.5 inline-flex size-5 items-center justify-center rounded-full bg-[#0F569D] text-[10px] font-semibold text-white">
+                      {activeFilterCount}
+                    </span>
+                  )}
                 </SheetTrigger>
                 <SheetContent side="left" className="w-80 overflow-y-auto p-5">
                   <SheetHeader>
@@ -317,16 +332,92 @@ export default function AdvisorsPage() {
 
               {/* Sort */}
               <Select value={sortBy} onValueChange={(val) => setSortBy(val ?? "rating")}>
-                <SelectTrigger className="w-[130px]">
+                <SelectTrigger className="w-[150px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="rating">評価順</SelectItem>
                   <SelectItem value="newest">新着順</SelectItem>
+                  <SelectItem value="rate_asc">時給安い順</SelectItem>
+                  <SelectItem value="rate_desc">時給高い順</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
+
+          {/* Active filter chips */}
+          {activeFilterCount > 0 && (
+            <div className="mb-6 flex flex-wrap items-center gap-2">
+              <span className="text-xs text-[#6B7280]">適用中:</span>
+              {filters.industries.map((ind) => (
+                <button
+                  key={`ind-${ind}`}
+                  type="button"
+                  onClick={() =>
+                    setFilters({
+                      ...filters,
+                      industries: filters.industries.filter((i) => i !== ind),
+                    })
+                  }
+                  className="inline-flex items-center gap-1 rounded-full bg-[#E8F0FE] px-3 py-1 text-xs font-medium text-[#0F569D] hover:bg-[#D5E3FC]"
+                >
+                  業界: {ind}
+                  <X className="size-3" />
+                </button>
+              ))}
+              {filters.specialties.map((sp) => (
+                <button
+                  key={`sp-${sp}`}
+                  type="button"
+                  onClick={() =>
+                    setFilters({
+                      ...filters,
+                      specialties: filters.specialties.filter((s) => s !== sp),
+                    })
+                  }
+                  className="inline-flex items-center gap-1 rounded-full bg-[#E8F0FE] px-3 py-1 text-xs font-medium text-[#0F569D] hover:bg-[#D5E3FC]"
+                >
+                  領域: {sp}
+                  <X className="size-3" />
+                </button>
+              ))}
+              {filters.areas.map((a) => (
+                <button
+                  key={`area-${a}`}
+                  type="button"
+                  onClick={() =>
+                    setFilters({
+                      ...filters,
+                      areas: filters.areas.filter((ar) => ar !== a),
+                    })
+                  }
+                  className="inline-flex items-center gap-1 rounded-full bg-[#E8F0FE] px-3 py-1 text-xs font-medium text-[#0F569D] hover:bg-[#D5E3FC]"
+                >
+                  エリア: {a}
+                  <X className="size-3" />
+                </button>
+              ))}
+              {filters.acceptingOnly && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setFilters({ ...filters, acceptingOnly: false })
+                  }
+                  className="inline-flex items-center gap-1 rounded-full bg-[#E8F0FE] px-3 py-1 text-xs font-medium text-[#0F569D] hover:bg-[#D5E3FC]"
+                >
+                  受付中のみ
+                  <X className="size-3" />
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="ml-1 text-xs text-[#6B7280] underline-offset-2 hover:underline"
+              >
+                すべて解除
+              </button>
+            </div>
+          )}
 
           {/* Results Grid */}
           {loading ? (

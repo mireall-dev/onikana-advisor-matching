@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { getStripe } from "@/lib/stripe";
+import { getStripe, hasStripeServerEnv } from "@/lib/stripe";
 import { createClient } from "@supabase/supabase-js";
 import type Stripe from "stripe";
 
-// webhook用にservice roleクライアントを使う
+// webhook 用に service role クライアントを使う
 function createAdminClient() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -12,6 +12,14 @@ function createAdminClient() {
 }
 
 export async function POST(request: Request) {
+  // Stripe / Supabase env が無ければ webhook は無効
+  if (!hasStripeServerEnv() || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return NextResponse.json(
+      { error: "Stripe webhook not configured" },
+      { status: 503 }
+    );
+  }
+
   const body = await request.text();
   const signature = request.headers.get("stripe-signature");
 
@@ -32,37 +40,67 @@ export async function POST(request: Request) {
 
   const supabase = createAdminClient();
 
-  if (event.type === "payment_intent.succeeded") {
-    const paymentIntent = event.data.object as Stripe.PaymentIntent;
-    await supabase
-      .from("payments")
-      .update({ status: "succeeded" })
-      .eq("stripe_payment_intent_id", paymentIntent.id);
+  switch (event.type) {
+    case "payment_intent.succeeded": {
+      const pi = event.data.object as Stripe.PaymentIntent;
 
-    // matchのpayment_statusも更新
-    const matchId = paymentIntent.metadata.match_id;
-    if (matchId) {
+      // 冪等性: 既に succeeded で記録済みならスキップ
+      const { data: existing } = await supabase
+        .from("payments")
+        .select("status")
+        .eq("stripe_payment_intent_id", pi.id)
+        .single();
+
+      if (existing?.status === "succeeded") {
+        break;
+      }
+
       await supabase
-        .from("matches")
-        .update({ payment_status: "paid" })
-        .eq("id", matchId);
+        .from("payments")
+        .update({ status: "succeeded" })
+        .eq("stripe_payment_intent_id", pi.id);
+
+      const matchId = pi.metadata.match_id;
+      if (matchId) {
+        await supabase
+          .from("matches")
+          .update({ payment_status: "paid" })
+          .eq("id", matchId);
+      }
+      break;
     }
-  }
 
-  if (event.type === "payment_intent.payment_failed") {
-    const paymentIntent = event.data.object as Stripe.PaymentIntent;
-    await supabase
-      .from("payments")
-      .update({ status: "failed" })
-      .eq("stripe_payment_intent_id", paymentIntent.id);
+    case "payment_intent.payment_failed": {
+      const pi = event.data.object as Stripe.PaymentIntent;
 
-    const matchId = paymentIntent.metadata.match_id;
-    if (matchId) {
+      const { data: existing } = await supabase
+        .from("payments")
+        .select("status")
+        .eq("stripe_payment_intent_id", pi.id)
+        .single();
+
+      if (existing?.status === "failed") {
+        break;
+      }
+
       await supabase
-        .from("matches")
-        .update({ payment_status: "failed" })
-        .eq("id", matchId);
+        .from("payments")
+        .update({ status: "failed" })
+        .eq("stripe_payment_intent_id", pi.id);
+
+      const matchId = pi.metadata.match_id;
+      if (matchId) {
+        await supabase
+          .from("matches")
+          .update({ payment_status: "failed" })
+          .eq("id", matchId);
+      }
+      break;
     }
+
+    default:
+      // 未対応イベントは 200 で受信のみ
+      break;
   }
 
   return NextResponse.json({ received: true });
