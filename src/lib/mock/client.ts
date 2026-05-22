@@ -51,9 +51,24 @@ interface MockSubscription {
   unsubscribe: () => void;
 }
 
-// ----- localStorage helpers (SSR-safe) -----
+// ----- localStorage + cookie helpers (SSR-safe) -----
+//
+// The mock auth persists the active user_id in two places:
+//   - localStorage (so client navigations remain logged-in)
+//   - a cookie (so Server Components can read the user during SSR)
 
-const AUTH_KEY = "mock_auth_user_id";
+export const MOCK_AUTH_COOKIE = "mock_auth_user_id";
+const AUTH_KEY = MOCK_AUTH_COOKIE;
+
+function setBrowserCookie(name: string, value: string): void {
+  if (typeof document === "undefined") return;
+  document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=2592000; samesite=lax`;
+}
+
+function clearBrowserCookie(name: string): void {
+  if (typeof document === "undefined") return;
+  document.cookie = `${name}=; path=/; max-age=0; samesite=lax`;
+}
 
 function getStoredUserId(): string | null {
   if (typeof window === "undefined") return null;
@@ -68,6 +83,7 @@ function setStoredUserId(id: string): void {
   if (typeof window === "undefined") return;
   try {
     window.localStorage.setItem(AUTH_KEY, id);
+    setBrowserCookie(AUTH_KEY, id);
   } catch {
     /* SSR / security policy */
   }
@@ -77,6 +93,7 @@ function removeStoredUserId(): void {
   if (typeof window === "undefined") return;
   try {
     window.localStorage.removeItem(AUTH_KEY);
+    clearBrowserCookie(AUTH_KEY);
   } catch {
     /* SSR / security policy */
   }
@@ -420,7 +437,7 @@ interface AuthResult {
   error: { message: string } | null;
 }
 
-function createMockAuth() {
+function createMockAuth(opts?: { getCookie?: (name: string) => string | undefined }) {
   return {
     async signInWithPassword({
       email,
@@ -464,7 +481,8 @@ function createMockAuth() {
     },
 
     async getUser(): Promise<AuthResult> {
-      const userId = getStoredUserId();
+      // Browser: localStorage. Server: cookie passed in via opts.getCookie.
+      const userId = getStoredUserId() ?? opts?.getCookie?.(AUTH_KEY) ?? null;
       if (!userId) {
         return { data: { user: null }, error: null };
       }
@@ -531,9 +549,15 @@ export interface MockSupabaseClient {
   removeChannel: (channel: unknown) => void;
 }
 
-export function createMockClient(): MockSupabaseClient {
+export interface CreateMockClientOptions {
+  getCookie?: (name: string) => string | undefined;
+}
+
+export function createMockClient(
+  opts?: CreateMockClientOptions
+): MockSupabaseClient {
   return {
-    auth: createMockAuth(),
+    auth: createMockAuth(opts),
     from(table: string) {
       return new MockQueryBuilder(table);
     },
