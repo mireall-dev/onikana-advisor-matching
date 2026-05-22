@@ -5,7 +5,8 @@ import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { useRealtimeMessages } from "@/hooks/use-realtime-messages";
 import { toast } from "sonner";
-import { Send, Loader2, MessageSquare } from "lucide-react";
+import Image from "next/image";
+import { Send, Loader2 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -194,8 +195,15 @@ export default function AdvisorChatPage({
               <Loader2 className="size-6 animate-spin text-[#0F569D]" />
             </div>
           ) : conversations.length === 0 ? (
-            <div className="px-4 py-12 text-center">
-              <p className="text-sm text-[#6B7280]">
+            <div className="flex flex-col items-center justify-center px-4 py-12 text-center">
+              <Image
+                src="/images/empty-inbox.png"
+                alt=""
+                width={160}
+                height={160}
+                className="pointer-events-none"
+              />
+              <p className="mt-4 text-sm text-[#6B7280]">
                 承認済みの会話はありません
               </p>
             </div>
@@ -251,8 +259,15 @@ export default function AdvisorChatPage({
                   <Loader2 className="size-6 animate-spin text-[#0F569D]" />
                 </div>
               ) : conversations.length === 0 ? (
-                <div className="px-4 py-12 text-center">
-                  <p className="text-sm text-[#6B7280]">
+                <div className="flex flex-col items-center justify-center px-4 py-12 text-center">
+                  <Image
+                    src="/images/empty-inbox.png"
+                    alt=""
+                    width={160}
+                    height={160}
+                    className="pointer-events-none"
+                  />
+                  <p className="mt-4 text-sm text-[#6B7280]">
                     承認済みの会話はありません
                   </p>
                 </div>
@@ -306,8 +321,14 @@ export default function AdvisorChatPage({
       <div className="hidden flex-1 flex-col md:flex">
         {!selectedRequestId ? (
           <div className="flex flex-1 items-center justify-center">
-            <div className="text-center">
-              <MessageSquare className="mx-auto size-12 text-[#E5E7EB]" />
+            <div className="flex flex-col items-center text-center">
+              <Image
+                src="/images/empty-inbox.png"
+                alt=""
+                width={180}
+                height={180}
+                className="pointer-events-none"
+              />
               <p className="mt-4 text-sm text-[#6B7280]">
                 会話を選択してください
               </p>
@@ -336,8 +357,15 @@ export default function AdvisorChatPage({
                     <Loader2 className="size-6 animate-spin text-[#0F569D]" />
                   </div>
                 ) : messages.length === 0 ? (
-                  <div className="flex items-center justify-center py-12">
-                    <p className="text-sm text-[#6B7280]">
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <Image
+                      src="/images/empty-inbox.png"
+                      alt=""
+                      width={160}
+                      height={160}
+                      className="pointer-events-none"
+                    />
+                    <p className="mt-4 text-sm text-[#6B7280]">
                       メッセージはまだありません。最初のメッセージを送信しましょう。
                     </p>
                   </div>
@@ -479,8 +507,15 @@ function MobileChatView({
               <Loader2 className="size-6 animate-spin text-[#0F569D]" />
             </div>
           ) : messages.length === 0 ? (
-            <div className="flex items-center justify-center py-12">
-              <p className="text-sm text-[#6B7280]">
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <Image
+                src="/images/empty-inbox.png"
+                alt=""
+                width={160}
+                height={160}
+                className="pointer-events-none"
+              />
+              <p className="mt-4 text-sm text-[#6B7280]">
                 メッセージはまだありません
               </p>
             </div>

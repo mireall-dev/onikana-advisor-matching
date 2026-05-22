@@ -92,8 +92,18 @@ export default function LandingPage() {
       </header>
 
       {/* Hero Section */}
-      <section className="relative flex flex-1 items-center bg-gradient-to-br from-[#E8F0FE] to-white">
-        <div className="mx-auto max-w-6xl px-4 py-20 md:py-28">
+      <section className="relative flex flex-1 items-center bg-gradient-to-br from-[#E8F0FE] to-white overflow-hidden">
+        <div
+          className="absolute inset-0 opacity-40 pointer-events-none"
+          style={{
+            backgroundImage: "url('/images/hero-texture.png')",
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            backgroundRepeat: "no-repeat",
+          }}
+          aria-hidden="true"
+        />
+        <div className="relative mx-auto max-w-6xl px-4 py-20 md:py-28">
           <div className="mx-auto max-w-2xl text-center animate-fade-in-up">
             <p className="mb-4 inline-block rounded-full bg-white px-3 py-1 text-xs font-medium text-[#0F569D] ring-1 ring-[#0F569D]/20">
               成約手数料モデル / 審査済み顧問のみ

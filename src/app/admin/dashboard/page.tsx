@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
+import Image from "next/image";
 import {
   Building2,
   UserCheck,
@@ -245,9 +246,18 @@ export default function AdminDashboardPage() {
           </CardHeader>
           <CardContent>
             {activities.length === 0 ? (
-              <p className="text-sm text-[#6B7280]">
-                アクティビティはまだありません
-              </p>
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <Image
+                  src="/images/empty-inbox.png"
+                  alt=""
+                  width={160}
+                  height={160}
+                  className="pointer-events-none"
+                />
+                <p className="mt-4 text-sm text-[#6B7280]">
+                  アクティビティはまだありません
+                </p>
+              </div>
             ) : (
               <ul className="space-y-4">
                 {activities.map((activity) => (

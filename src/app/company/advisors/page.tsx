@@ -1,5 +1,7 @@
-import { Filter } from "lucide-react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
+
+
 import { AdvisorCard } from "@/components/shared/advisor-card";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -126,8 +128,14 @@ export default async function AdvisorsPage({
 function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center py-20">
-      <Filter className="mb-4 size-12 text-[#E5E7EB]" />
-      <p className="text-lg font-medium text-[#1A1A2E]">
+      <Image
+        src="/images/empty-search.png"
+        alt=""
+        width={180}
+        height={180}
+        className="pointer-events-none"
+      />
+      <p className="mt-4 text-lg font-medium text-[#1A1A2E]">
         条件に一致する顧問が見つかりませんでした
       </p>
       <p className="mt-2 text-sm text-[#6B7280]">

@@ -1,10 +1,10 @@
 import Link from "next/link";
+import Image from "next/image";
 import {
   CalendarCheck,
   CheckCircle2,
   Clock,
   CreditCard,
-  FileText,
   MessageCircle,
   Star,
 } from "lucide-react";
@@ -276,9 +276,15 @@ function EmptyState({ activeTab }: { activeTab: TabValue }) {
     rejected: "見送り",
   };
   return (
-    <div className="flex flex-col items-center py-16">
-      <FileText className="mb-3 size-10 text-[#E5E7EB]" />
-      <p className="text-[#6B7280]">
+    <div className="flex flex-col items-center justify-center py-16 text-center">
+      <Image
+        src="/images/empty-inbox.png"
+        alt=""
+        width={180}
+        height={180}
+        className="pointer-events-none"
+      />
+      <p className="mt-4 text-[#6B7280]">
         {activeTab === "all"
           ? "まだリクエストはありません。"
           : `${labels[activeTab]}のリクエストはありません。`}

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
+import Image from "next/image";
 import { ClipboardList, Handshake, CheckCircle2, Star, Loader2 } from "lucide-react";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { KpiCard } from "@/components/shared/kpi-card";
@@ -265,8 +266,15 @@ export default function AdvisorDashboardPage() {
           </h2>
           {requests.length === 0 ? (
             <Card>
-              <CardContent className="py-12 text-center">
-                <p className="text-[#6B7280]">
+              <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+                <Image
+                  src="/images/empty-inbox.png"
+                  alt=""
+                  width={180}
+                  height={180}
+                  className="pointer-events-none"
+                />
+                <p className="mt-4 text-[#6B7280]">
                   まだリクエストはありません
                 </p>
               </CardContent>
