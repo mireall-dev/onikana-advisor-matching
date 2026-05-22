@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { LogOut, Menu } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
@@ -66,9 +67,16 @@ export function Header() {
         {/* Logo */}
         <Link
           href="/"
-          className="shrink-0 font-heading text-xl font-bold tracking-tight text-[#0F569D]"
+          className="flex shrink-0 items-center gap-2"
         >
-          オニカナ顧問マッチング
+          <Image
+            src="/images/logo.png"
+            alt="オニカナ顧問マッチング"
+            width={160}
+            height={40}
+            className="h-9 w-auto"
+            priority
+          />
         </Link>
 
         {/* Desktop Navigation */}

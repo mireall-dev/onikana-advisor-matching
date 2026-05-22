@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { Search } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Input } from "@/components/ui/input";
@@ -209,9 +210,18 @@ export default function SearchPage() {
             ))}
           </div>
         ) : (
-          <p className="mt-8 text-center text-[#6B7280]">
-            現在おすすめの顧問がいません。
-          </p>
+          <div className="mt-8 flex flex-col items-center justify-center py-8 text-center">
+            <Image
+              src="/images/empty-search.png"
+              alt=""
+              width={180}
+              height={180}
+              className="pointer-events-none"
+            />
+            <p className="mt-4 text-[#6B7280]">
+              現在おすすめの顧問がいません。
+            </p>
+          </div>
         )}
       </section>
     </div>

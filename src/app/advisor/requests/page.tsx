@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import Image from "next/image";
 import { Loader2 } from "lucide-react";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Badge } from "@/components/ui/badge";
@@ -109,8 +110,15 @@ export default function AdvisorRequestsPage() {
     if (items.length === 0) {
       return (
         <Card>
-          <CardContent className="py-12 text-center">
-            <p className="text-[#6B7280]">{emptyLabel}</p>
+          <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+            <Image
+              src="/images/empty-inbox.png"
+              alt=""
+              width={180}
+              height={180}
+              className="pointer-events-none"
+            />
+            <p className="mt-4 text-[#6B7280]">{emptyLabel}</p>
           </CardContent>
         </Card>
       );

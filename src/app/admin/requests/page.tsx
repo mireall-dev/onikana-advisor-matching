@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
+import Image from "next/image";
 import { Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -116,9 +117,18 @@ export default function RequestsPage() {
       {/* Table */}
       <div className="animate-fade-in-up rounded-xl border border-[#E5E7EB] bg-white">
         {filteredRequests.length === 0 ? (
-          <p className="py-12 text-center text-sm text-[#6B7280]">
-            該当するリクエストはありません
-          </p>
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <Image
+              src="/images/empty-inbox.png"
+              alt=""
+              width={180}
+              height={180}
+              className="pointer-events-none"
+            />
+            <p className="mt-4 text-sm text-[#6B7280]">
+              該当するリクエストはありません
+            </p>
+          </div>
         ) : (
           <Table>
             <TableHeader>

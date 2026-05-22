@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Image from "next/image";
 import { Filter, SlidersHorizontal, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -348,8 +349,14 @@ export default function AdvisorsPage() {
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-20">
-              <Filter className="mb-4 size-12 text-[#E5E7EB]" />
-              <p className="text-lg font-medium text-[#1A1A2E]">
+              <Image
+                src="/images/empty-search.png"
+                alt=""
+                width={180}
+                height={180}
+                className="pointer-events-none"
+              />
+              <p className="mt-4 text-lg font-medium text-[#1A1A2E]">
                 条件に一致する顧問が見つかりませんでした
               </p>
               <p className="mt-2 text-sm text-[#6B7280]">

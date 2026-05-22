@@ -19,9 +19,32 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ?? "https://onikana-advisor-matching.vercel.app"
+  ),
   title: "オニカナ顧問マッチング",
   description:
-    "あなたのビジネスに最適な営業顧問を見つけよう。企業の強みに、最高の営業力を掛け合わせる。",
+    "営業顧問とのベストマッチを実現するプラットフォーム",
+  openGraph: {
+    title: "オニカナ顧問マッチング",
+    description: "営業顧問とのベストマッチを実現するプラットフォーム",
+    images: [
+      {
+        url: "/images/ogp.png",
+        width: 1200,
+        height: 630,
+        alt: "オニカナ顧問マッチング",
+      },
+    ],
+    type: "website",
+    locale: "ja_JP",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "オニカナ顧問マッチング",
+    description: "営業顧問とのベストマッチを実現するプラットフォーム",
+    images: ["/images/ogp.png"],
+  },
 };
 
 export default function RootLayout({
