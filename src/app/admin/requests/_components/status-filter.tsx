@@ -2,15 +2,16 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTransition } from "react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SelectField } from "@/components/shared/select-field";
 
 export type StatusFilter = "all" | "pending" | "approved" | "rejected";
+
+const STATUS_OPTIONS = [
+  { value: "all", label: "すべて" },
+  { value: "pending", label: "申請中" },
+  { value: "approved", label: "承認済" },
+  { value: "rejected", label: "見送り" },
+] as const;
 
 export function RequestStatusFilter({ active }: { active: StatusFilter }) {
   const router = useRouter();
@@ -28,21 +29,14 @@ export function RequestStatusFilter({ active }: { active: StatusFilter }) {
   }
 
   return (
-    <Select
+    <SelectField
       value={active}
-      onValueChange={(val) => {
-        if (val !== null) setActive(val);
-      }}
-    >
-      <SelectTrigger className="w-[160px]">
-        <SelectValue placeholder="ステータスで絞り込み" />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="all">すべて</SelectItem>
-        <SelectItem value="pending">申請中</SelectItem>
-        <SelectItem value="approved">承認済</SelectItem>
-        <SelectItem value="rejected">見送り</SelectItem>
-      </SelectContent>
-    </Select>
+      onValueChange={setActive}
+      options={STATUS_OPTIONS}
+      placeholder="ステータスで絞り込み"
+      ariaLabel="ステータスで絞り込み"
+      triggerClassName="w-[160px]"
+      className="w-[160px]"
+    />
   );
 }

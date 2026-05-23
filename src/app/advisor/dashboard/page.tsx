@@ -16,19 +16,19 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SelectField } from "@/components/shared/select-field";
 import type {
   AdvisorProfile,
   AdvisorStatus,
   MeetingRequest,
   CompanyProfile,
 } from "@/types/database";
+
+const ADVISOR_STATUS_OPTIONS = [
+  { value: "accepting", label: "受付中" },
+  { value: "full", label: "満席" },
+  { value: "paused", label: "休止中" },
+] as const;
 
 type RequestWithCompany = Omit<MeetingRequest, "company_profile"> & {
   company_profile?: CompanyProfile | null;
@@ -213,22 +213,16 @@ export default function AdvisorDashboardPage() {
           <div className="flex items-center gap-3">
             <span className="text-sm text-[#6B7280]">現在のステータス:</span>
             {profile && <StatusBadge status={profile.status} />}
-            <Select
+            <SelectField
               value={profile?.status ?? "accepting"}
-              onValueChange={(val) =>
-                handleStatusChange(val as AdvisorStatus)
-              }
+              onValueChange={(val) => handleStatusChange(val as AdvisorStatus)}
+              options={ADVISOR_STATUS_OPTIONS}
+              placeholder="ステータスを選択"
+              ariaLabel="ステータスを選択"
               disabled={statusUpdating}
-            >
-              <SelectTrigger className="w-36">
-                <SelectValue placeholder="ステータスを選択" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="accepting">受付中</SelectItem>
-                <SelectItem value="full">満席</SelectItem>
-                <SelectItem value="paused">休止中</SelectItem>
-              </SelectContent>
-            </Select>
+              triggerClassName="w-36"
+              className="w-36"
+            />
           </div>
         </div>
 

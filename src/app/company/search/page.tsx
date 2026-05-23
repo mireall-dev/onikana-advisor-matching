@@ -8,13 +8,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Sheet,
   SheetClose,
   SheetContent,
@@ -24,8 +17,22 @@ import {
 } from "@/components/ui/sheet";
 import { AdvisorCard } from "@/components/shared/advisor-card";
 import { EmptyState } from "@/components/shared/states";
+import {
+  SelectField,
+  type SelectFieldOption,
+} from "@/components/shared/select-field";
 import type { AdvisorProfile, User } from "@/types/database";
 import { INDUSTRIES, SPECIALTIES, AREAS } from "@/types/database";
+
+const ALL = "__all__";
+
+function buildOptions(items: readonly string[]): SelectFieldOption[] {
+  return [{ value: ALL, label: "すべて" }, ...items.map((v) => ({ value: v, label: v }))];
+}
+
+const INDUSTRY_OPTIONS = buildOptions(INDUSTRIES);
+const SPECIALTY_OPTIONS = buildOptions(SPECIALTIES);
+const AREA_OPTIONS = buildOptions(AREAS);
 
 type AdvisorWithUser = AdvisorProfile & { user: User };
 
@@ -139,23 +146,23 @@ export default function SearchPage() {
                       <SheetTitle className="text-left">絞り込み</SheetTitle>
                     </SheetHeader>
                     <div className="space-y-4 px-5 py-4">
-                      <FilterSelect
+                      <FilterRow
                         label="業界"
                         value={industry}
                         onChange={setIndustry}
-                        options={INDUSTRIES}
+                        options={INDUSTRY_OPTIONS}
                       />
-                      <FilterSelect
+                      <FilterRow
                         label="営業領域"
                         value={specialty}
                         onChange={setSpecialty}
-                        options={SPECIALTIES}
+                        options={SPECIALTY_OPTIONS}
                       />
-                      <FilterSelect
+                      <FilterRow
                         label="エリア"
                         value={area}
                         onChange={setArea}
-                        options={AREAS}
+                        options={AREA_OPTIONS}
                       />
                     </div>
                     <div className="flex items-center gap-2 border-t border-[#E5E7EB] px-5 py-4">
@@ -209,25 +216,25 @@ export default function SearchPage() {
                 </div>
               </div>
 
-              <FilterSelect
+              <FilterRow
                 label="業界"
                 value={industry}
                 onChange={setIndustry}
-                options={INDUSTRIES}
+                options={INDUSTRY_OPTIONS}
                 className="min-w-[140px]"
               />
-              <FilterSelect
+              <FilterRow
                 label="営業領域"
                 value={specialty}
                 onChange={setSpecialty}
-                options={SPECIALTIES}
+                options={SPECIALTY_OPTIONS}
                 className="min-w-[160px]"
               />
-              <FilterSelect
+              <FilterRow
                 label="エリア"
                 value={area}
                 onChange={setArea}
-                options={AREAS}
+                options={AREA_OPTIONS}
                 className="min-w-[140px]"
               />
 
@@ -285,7 +292,7 @@ export default function SearchPage() {
   );
 }
 
-function FilterSelect({
+function FilterRow({
   label,
   value,
   onChange,
@@ -295,7 +302,7 @@ function FilterSelect({
   label: string;
   value: string;
   onChange: (v: string) => void;
-  options: readonly string[];
+  options: readonly SelectFieldOption[];
   className?: string;
 }) {
   return (
@@ -303,22 +310,13 @@ function FilterSelect({
       <label className="mb-1.5 block text-sm font-medium text-[#1A1A2E]">
         {label}
       </label>
-      <Select
-        value={value || "__all__"}
-        onValueChange={(val) => onChange(val === "__all__" ? "" : val ?? "")}
-      >
-        <SelectTrigger className="w-full" aria-label={label}>
-          <SelectValue placeholder="すべて" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="__all__">すべて</SelectItem>
-          {options.map((opt) => (
-            <SelectItem key={opt} value={opt}>
-              {opt}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <SelectField
+        value={value || ALL}
+        onValueChange={(val) => onChange(val === ALL ? "" : val)}
+        options={options}
+        placeholder="すべて"
+        ariaLabel={label}
+      />
     </div>
   );
 }
