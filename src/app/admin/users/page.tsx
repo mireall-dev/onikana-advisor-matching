@@ -26,6 +26,11 @@ interface AdvisorInfo {
   approval_status: ApprovalStatus;
 }
 
+interface CompanyInfo {
+  user_id: string;
+  company_name: string;
+}
+
 const ROLE_BADGE_STYLES: Record<UserRole, { bg: string; text: string }> = {
   company: { bg: "bg-blue-50", text: "text-blue-700" },
   advisor: { bg: "bg-green-50", text: "text-green-700" },
@@ -55,12 +60,13 @@ export default async function UsersPage({
   const query = (sp.q ?? "").trim();
 
   const supabase = await createClient();
-  const [usersRes, advisorProfilesRes] = await Promise.all([
+  const [usersRes, advisorProfilesRes, companyProfilesRes] = await Promise.all([
     supabase.from("users").select("*").order("created_at", { ascending: false }),
     supabase.from("advisor_profiles").select("user_id, status, approval_status"),
+    supabase.from("company_profiles").select("user_id, company_name"),
   ]);
 
-  if (usersRes.error || advisorProfilesRes.error) {
+  if (usersRes.error || advisorProfilesRes.error || companyProfilesRes.error) {
     return (
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <ErrorState title="ユーザーデータの取得に失敗しました" />
@@ -70,10 +76,16 @@ export default async function UsersPage({
 
   const users = (usersRes.data ?? []) as User[];
   const advisorProfiles = (advisorProfilesRes.data ?? []) as AdvisorInfo[];
+  const companyProfiles = (companyProfilesRes.data ?? []) as CompanyInfo[];
 
   const advisorMap = new Map<string, AdvisorInfo>();
   for (const profile of advisorProfiles) {
     advisorMap.set(profile.user_id, profile);
+  }
+
+  const companyMap = new Map<string, CompanyInfo>();
+  for (const profile of companyProfiles) {
+    companyMap.set(profile.user_id, profile);
   }
 
   let filteredUsers = users;
@@ -82,11 +94,13 @@ export default async function UsersPage({
   }
   if (query) {
     const q = query.toLowerCase();
-    filteredUsers = filteredUsers.filter(
-      (u) =>
-        u.display_name.toLowerCase().includes(q) ||
-        u.email.toLowerCase().includes(q)
-    );
+    filteredUsers = filteredUsers.filter((u) => {
+      if (u.display_name.toLowerCase().includes(q)) return true;
+      if (u.email.toLowerCase().includes(q)) return true;
+      const company = companyMap.get(u.id);
+      if (company?.company_name.toLowerCase().includes(q)) return true;
+      return false;
+    });
   }
 
   return (
@@ -113,7 +127,7 @@ export default async function UsersPage({
           <Table>
             <TableHeader>
               <TableRow className="border-[#E5E7EB]">
-                <TableHead>名前</TableHead>
+                <TableHead>名前 / 会社名</TableHead>
                 <TableHead>メール</TableHead>
                 <TableHead>ロール</TableHead>
                 <TableHead>登録日</TableHead>
@@ -124,12 +138,29 @@ export default async function UsersPage({
               {filteredUsers.map((u) => {
                 const advisorInfo =
                   u.role === "advisor" ? advisorMap.get(u.id) : null;
+                const companyInfo =
+                  u.role === "company" ? companyMap.get(u.id) : null;
                 const roleBadgeStyle = ROLE_BADGE_STYLES[u.role];
 
                 return (
                   <TableRow key={u.id} className="border-[#E5E7EB]">
-                    <TableCell className="font-medium text-[#1A1A2E]">
-                      {u.display_name}
+                    <TableCell>
+                      <div className="flex flex-col">
+                        {companyInfo ? (
+                          <>
+                            <span className="font-medium text-[#1A1A2E]">
+                              {companyInfo.company_name}
+                            </span>
+                            <span className="text-xs text-[#6B7280]">
+                              担当: {u.display_name}
+                            </span>
+                          </>
+                        ) : (
+                          <span className="font-medium text-[#1A1A2E]">
+                            {u.display_name}
+                          </span>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell className="text-[#6B7280]">{u.email}</TableCell>
                     <TableCell>

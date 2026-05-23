@@ -71,7 +71,7 @@ export default async function MatchesPage() {
   await requireAdmin();
   const supabase = await createClient();
 
-  const [matchesRes, paymentsRes] = await Promise.all([
+  const [matchesRes, paymentsRes, companyProfilesRes] = await Promise.all([
     supabase
       .from("matches")
       .select(
@@ -79,9 +79,10 @@ export default async function MatchesPage() {
       )
       .order("created_at", { ascending: false }),
     supabase.from("payments").select("*"),
+    supabase.from("company_profiles").select("user_id, company_name"),
   ]);
 
-  if (matchesRes.error || paymentsRes.error) {
+  if (matchesRes.error || paymentsRes.error || companyProfilesRes.error) {
     return (
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <ErrorState title="マッチングデータの取得に失敗しました" />
@@ -91,10 +92,19 @@ export default async function MatchesPage() {
 
   const matches = (matchesRes.data ?? []) as MatchWithRelations[];
   const payments = (paymentsRes.data ?? []) as Payment[];
+  const companyProfiles = (companyProfilesRes.data ?? []) as {
+    user_id: string;
+    company_name: string;
+  }[];
 
   const paymentMap = new Map<string, Payment>();
   for (const payment of payments) {
     paymentMap.set(payment.match_id, payment);
+  }
+
+  const companyNameMap = new Map<string, string>();
+  for (const cp of companyProfiles) {
+    companyNameMap.set(cp.user_id, cp.company_name);
   }
 
   return (
@@ -115,7 +125,7 @@ export default async function MatchesPage() {
           <Table>
             <TableHeader>
               <TableRow className="border-[#E5E7EB]">
-                <TableHead>企業名</TableHead>
+                <TableHead>企業 (担当者)</TableHead>
                 <TableHead>顧問名</TableHead>
                 <TableHead className="text-center">企業確認</TableHead>
                 <TableHead className="text-center">顧問確認</TableHead>
@@ -127,11 +137,22 @@ export default async function MatchesPage() {
             <TableBody>
               {matches.map((matchItem) => {
                 const paymentStatus = getPaymentStatusForMatch(matchItem, paymentMap);
+                const companyName = companyNameMap.get(matchItem.company_id);
+                const contactName = matchItem.company?.display_name ?? "不明";
 
                 return (
                   <TableRow key={matchItem.id} className="border-[#E5E7EB]">
-                    <TableCell className="font-medium text-[#1A1A2E]">
-                      {matchItem.company?.display_name ?? "不明"}
+                    <TableCell>
+                      <div className="flex flex-col">
+                        <span className="font-medium text-[#1A1A2E]">
+                          {companyName ?? contactName}
+                        </span>
+                        {companyName && (
+                          <span className="text-xs text-[#6B7280]">
+                            担当: {contactName}
+                          </span>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell className="text-[#1A1A2E]">
                       {matchItem.advisor?.display_name ?? "不明"}

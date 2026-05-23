@@ -4,16 +4,17 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SelectField } from "@/components/shared/select-field";
 import type { UserRole } from "@/types/database";
 
 export type RoleFilter = "all" | UserRole;
+
+const ROLE_OPTIONS = [
+  { value: "all", label: "すべて" },
+  { value: "company", label: "企業" },
+  { value: "advisor", label: "顧問" },
+  { value: "admin", label: "管理者" },
+] as const;
 
 export function UsersFilter({
   role,
@@ -62,22 +63,15 @@ export function UsersFilter({
 
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-      <Select
+      <SelectField
         value={role}
-        onValueChange={(val) => {
-          if (val !== null) setRole(val);
-        }}
-      >
-        <SelectTrigger className="w-[160px]">
-          <SelectValue placeholder="ロールで絞り込み" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">すべて</SelectItem>
-          <SelectItem value="company">企業</SelectItem>
-          <SelectItem value="advisor">顧問</SelectItem>
-          <SelectItem value="admin">管理者</SelectItem>
-        </SelectContent>
-      </Select>
+        onValueChange={setRole}
+        options={ROLE_OPTIONS}
+        placeholder="ロールで絞り込み"
+        ariaLabel="ロールで絞り込み"
+        triggerClassName="w-[160px]"
+        className="w-[160px]"
+      />
 
       <div className="relative flex-1 max-w-sm">
         <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-[#6B7280]" />

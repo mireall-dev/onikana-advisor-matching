@@ -7,20 +7,21 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { SelectField } from "@/components/shared/select-field";
 import { INDUSTRIES, SPECIALTIES, AREAS } from "@/types/database";
+
+const SORT_OPTIONS = [
+  { value: "rating", label: "評価順" },
+  { value: "newest", label: "新着順" },
+  { value: "rate_asc", label: "時給安い順" },
+  { value: "rate_desc", label: "時給高い順" },
+] as const;
 
 export interface FilterValues {
   industries: string[];
@@ -246,20 +247,14 @@ export function HeaderActions({ initial }: { initial: FilterValues }) {
         </SheetContent>
       </Sheet>
 
-      <Select
-        value={initial.sortBy}
-        onValueChange={(val) => push({ ...initial, sortBy: val ?? "rating" })}
-      >
-        <SelectTrigger className="w-[150px]">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="rating">評価順</SelectItem>
-          <SelectItem value="newest">新着順</SelectItem>
-          <SelectItem value="rate_asc">時給安い順</SelectItem>
-          <SelectItem value="rate_desc">時給高い順</SelectItem>
-        </SelectContent>
-      </Select>
+      <SelectField
+        value={initial.sortBy || "rating"}
+        onValueChange={(val) => push({ ...initial, sortBy: val })}
+        options={SORT_OPTIONS}
+        placeholder="並び順"
+        ariaLabel="並び順"
+        triggerClassName="w-[150px]"
+      />
     </div>
   );
 }

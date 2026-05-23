@@ -14,19 +14,16 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FormField } from "@/components/shared/form-field";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SelectField } from "@/components/shared/select-field";
 import {
   INDUSTRIES,
   SPECIALTIES,
   AREAS,
   EMPLOYEE_SCALES,
 } from "@/types/database";
+
+const INDUSTRY_OPTIONS = INDUSTRIES.map((v) => ({ value: v, label: v }));
+const EMPLOYEE_SCALE_OPTIONS = EMPLOYEE_SCALES.map((v) => ({ value: v, label: v }));
 import type { UserRole } from "@/types/database";
 
 const companySchema = z.object({
@@ -432,45 +429,29 @@ export default function RegisterPage() {
                 </FormField>
 
                 <FormField label="業界" error={companyErrors.industry} required>
-                  <Select
+                  <SelectField
                     value={companyForm.industry}
                     onValueChange={(val) =>
-                      setCompanyForm({ ...companyForm, industry: val ?? "" })
+                      setCompanyForm({ ...companyForm, industry: val })
                     }
+                    options={INDUSTRY_OPTIONS}
+                    placeholder="業界を選択"
+                    ariaLabel="業界"
                     disabled={isLoading}
-                  >
-                    <SelectTrigger className="w-full" aria-label="業界">
-                      <SelectValue placeholder="業界を選択" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {INDUSTRIES.map((industry) => (
-                        <SelectItem key={industry} value={industry}>
-                          {industry}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  />
                 </FormField>
 
                 <FormField label="従業員規模" error={companyErrors.employeeScale} required>
-                  <Select
+                  <SelectField
                     value={companyForm.employeeScale}
                     onValueChange={(val) =>
-                      setCompanyForm({ ...companyForm, employeeScale: val ?? "" })
+                      setCompanyForm({ ...companyForm, employeeScale: val })
                     }
+                    options={EMPLOYEE_SCALE_OPTIONS}
+                    placeholder="従業員規模を選択"
+                    ariaLabel="従業員規模"
                     disabled={isLoading}
-                  >
-                    <SelectTrigger className="w-full" aria-label="従業員規模">
-                      <SelectValue placeholder="従業員規模を選択" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {EMPLOYEE_SCALES.map((scale) => (
-                        <SelectItem key={scale} value={scale}>
-                          {scale}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  />
                 </FormField>
 
                 <FormField label="営業課題" htmlFor="salesChallenge">

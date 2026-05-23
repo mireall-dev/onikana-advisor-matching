@@ -44,14 +44,17 @@ export default async function RequestsPage({
   const statusFilter = parseStatus(sp.status);
 
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("meeting_requests")
-    .select(
-      "*, company:users!company_id(display_name), advisor:users!advisor_id(display_name)"
-    )
-    .order("created_at", { ascending: false });
+  const [requestsRes, companyProfilesRes] = await Promise.all([
+    supabase
+      .from("meeting_requests")
+      .select(
+        "*, company:users!company_id(display_name), advisor:users!advisor_id(display_name)"
+      )
+      .order("created_at", { ascending: false }),
+    supabase.from("company_profiles").select("user_id, company_name"),
+  ]);
 
-  if (error) {
+  if (requestsRes.error || companyProfilesRes.error) {
     return (
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <ErrorState title="リクエストの取得に失敗しました" />
@@ -59,7 +62,14 @@ export default async function RequestsPage({
     );
   }
 
-  const requests = (data ?? []) as RequestWithUsers[];
+  const requests = (requestsRes.data ?? []) as RequestWithUsers[];
+  const companyNameMap = new Map<string, string>();
+  for (const cp of (companyProfilesRes.data ?? []) as {
+    user_id: string;
+    company_name: string;
+  }[]) {
+    companyNameMap.set(cp.user_id, cp.company_name);
+  }
   const filteredRequests =
     statusFilter === "all"
       ? requests
@@ -86,7 +96,7 @@ export default async function RequestsPage({
             <TableHeader>
               <TableRow className="border-[#E5E7EB]">
                 <TableHead>ID</TableHead>
-                <TableHead>企業名</TableHead>
+                <TableHead>企業 (担当者)</TableHead>
                 <TableHead>顧問名</TableHead>
                 <TableHead>相談内容</TableHead>
                 <TableHead>日付</TableHead>
@@ -94,13 +104,25 @@ export default async function RequestsPage({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredRequests.map((request) => (
+              {filteredRequests.map((request) => {
+                const companyName = companyNameMap.get(request.company_id);
+                const contactName = request.company?.display_name ?? "不明";
+                return (
                 <TableRow key={request.id} className="border-[#E5E7EB]">
                   <TableCell className="font-mono text-xs text-[#6B7280]">
                     {shortenId(request.id)}
                   </TableCell>
-                  <TableCell className="font-medium text-[#1A1A2E]">
-                    {request.company?.display_name ?? "不明"}
+                  <TableCell>
+                    <div className="flex flex-col">
+                      <span className="font-medium text-[#1A1A2E]">
+                        {companyName ?? contactName}
+                      </span>
+                      {companyName && (
+                        <span className="text-xs text-[#6B7280]">
+                          担当: {contactName}
+                        </span>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell className="text-[#1A1A2E]">
                     {request.advisor?.display_name ?? "不明"}
@@ -118,7 +140,8 @@ export default async function RequestsPage({
                     <StatusBadge status={request.status} />
                   </TableCell>
                 </TableRow>
-              ))}
+                );
+              })}
             </TableBody>
           </Table>
         )}
