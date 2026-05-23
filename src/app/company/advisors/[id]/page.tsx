@@ -56,7 +56,7 @@ export default async function AdvisorDetailPage({
   const { data: reviewsData } = await supabase
     .from("reviews")
     .select(
-      "*, company:users!company_id(*), company_profile:company_profiles!company_id(*)"
+      "*, company:users!company_id(*), company_profile:company_profiles!company_id(*)",
     )
     .eq("advisor_id", advisor.user_id)
     .order("created_at", { ascending: false });
@@ -66,7 +66,7 @@ export default async function AdvisorDetailPage({
 
   return (
     <div className="min-h-screen bg-[#F8F9FB]">
-      <div className="mx-auto max-w-[900px] px-4 py-8">
+      <div className="mx-auto max-w-[1100px] px-4 py-8">
         {/* Back Link */}
         <Link
           href="/company/advisors"
@@ -76,56 +76,103 @@ export default async function AdvisorDetailPage({
           顧問一覧に戻る
         </Link>
 
-        {/* Header Section */}
-        <div className="animate-fade-in-up rounded-xl bg-gradient-to-r from-[#E8F0FE] to-white p-8">
-          <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
-            <div className="flex items-start gap-5">
-              <Avatar className="size-20 shrink-0 ring-2 ring-white">
-                {advisor.user.avatar_url ? (
-                  <AvatarImage
-                    src={advisor.user.avatar_url}
-                    alt={advisor.user.display_name}
+        {/* Content + Sticky CTA Sidebar */}
+        <div className="mt-6 grid grid-cols-1 gap-8 md:grid-cols-[1fr_280px]">
+          {/* Main Content */}
+          <div>
+            {/* Header Section */}
+            <div className="animate-fade-in-up relative overflow-hidden rounded-xl bg-gradient-to-r from-[#E8F0FE] to-white p-8">
+              <div
+                className="pointer-events-none absolute inset-0 opacity-30"
+                style={{
+                  backgroundImage:
+                    "radial-gradient(circle, #0F569D 0.5px, transparent 0.5px)",
+                  backgroundSize: "16px 16px",
+                }}
+                aria-hidden="true"
+              />
+              <div className="relative flex items-start gap-5">
+                <div className="relative shrink-0">
+                  <Avatar className="size-24 ring-4 ring-white shadow-[0_12px_40px_rgba(15,86,157,0.15)]">
+                    {advisor.user.avatar_url ? (
+                      <AvatarImage
+                        src={advisor.user.avatar_url}
+                        alt={advisor.user.display_name}
+                      />
+                    ) : null}
+                    <AvatarFallback className="bg-[#0F569D] text-2xl font-semibold text-white">
+                      {getInitials(advisor.user.display_name)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span
+                    className={`absolute bottom-1 right-1 size-3 rounded-full border-2 border-white ${advisor.status === "accepting" ? "bg-green-500" : advisor.status === "full" ? "bg-amber-500" : "bg-gray-400"}`}
+                    aria-label={
+                      advisor.status === "accepting"
+                        ? "受付中"
+                        : advisor.status === "full"
+                          ? "満席"
+                          : "休止中"
+                    }
                   />
-                ) : null}
-                <AvatarFallback className="bg-[#0F569D] text-xl font-semibold text-white">
-                  {getInitials(advisor.user.display_name)}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <h1 className="text-2xl font-bold text-[#1A1A2E]">
-                  {advisor.user.display_name}
-                </h1>
-                {advisor.catchphrase && (
-                  <p className="mt-1 text-[#6B7280]">{advisor.catchphrase}</p>
-                )}
-                <div className="mt-3 flex flex-wrap items-center gap-3">
-                  <StatusBadge status={advisor.status} />
-                  <RatingStars
-                    rating={advisor.rating_avg}
-                    count={advisor.rating_count}
-                    size="sm"
-                  />
-                  <span className="inline-flex items-center gap-1 rounded-full bg-white/70 px-3 py-0.5 text-xs font-medium text-[#0F569D] ring-1 ring-[#0F569D]/20">
-                    参考報酬 {formatHourlyRate(advisor.hourly_rate)}
-                  </span>
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold text-[#1A1A2E]">
+                    {advisor.user.display_name}
+                  </h1>
+                  {advisor.catchphrase && (
+                    <p className="mt-1 text-[#6B7280]">{advisor.catchphrase}</p>
+                  )}
+                  <div className="mt-3 flex flex-wrap items-center gap-3">
+                    <StatusBadge status={advisor.status} />
+                    <RatingStars
+                      rating={advisor.rating_avg}
+                      count={advisor.rating_count}
+                      size="sm"
+                    />
+                    <span className="inline-flex items-center gap-1 rounded-full bg-white/70 px-3 py-0.5 text-xs font-medium text-[#0F569D] ring-1 ring-[#0F569D]/20">
+                      参考報酬 {formatHourlyRate(advisor.hourly_rate)}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="hidden shrink-0 md:block">
-              <RequestCta advisorId={advisor.id} accepting={isAccepting} />
+            <DetailTabs
+              reviewCount={reviews.length}
+              profile={<ProfilePanel advisor={advisor} />}
+              achievements={<AchievementsPanel advisor={advisor} />}
+              reviews={<ReviewsPanel advisor={advisor} reviews={reviews} />}
+            />
+          </div>
+
+          {/* Desktop Sticky CTA Sidebar */}
+          <div className="hidden md:block">
+            <div className="sticky top-24 space-y-4">
+              <div className="rounded-xl bg-white p-5 ring-1 ring-[#E5E7EB] shadow-[var(--shadow-float)]">
+                <div className="space-y-4">
+                  <div className="text-center">
+                    <p className="text-xs text-[#6B7280]">参考報酬</p>
+                    <p className="text-xl font-bold text-[#0F569D]">
+                      {formatHourlyRate(advisor.hourly_rate)}
+                    </p>
+                  </div>
+                  <div className="h-px bg-[#E5E7EB]" />
+                  <div className="flex items-center justify-center">
+                    <RatingStars
+                      rating={advisor.rating_avg}
+                      count={advisor.rating_count}
+                      size="sm"
+                    />
+                  </div>
+                  <div className="h-px bg-[#E5E7EB]" />
+                  <div className="flex justify-center">
+                    <StatusBadge status={advisor.status} />
+                  </div>
+                  <RequestCta advisorId={advisor.id} accepting={isAccepting} />
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-
-        {/* Tabs Section */}
-        <div className="mt-8">
-          <DetailTabs
-            reviewCount={reviews.length}
-            profile={<ProfilePanel advisor={advisor} />}
-            achievements={<AchievementsPanel advisor={advisor} />}
-            reviews={<ReviewsPanel advisor={advisor} reviews={reviews} />}
-          />
         </div>
       </div>
 
@@ -209,9 +256,9 @@ function AchievementsPanel({ advisor }: { advisor: AdvisorWithUser }) {
                 <h4 className="font-semibold text-[#1A1A2E]">{a.company}</h4>
                 <p className="mt-1 text-sm text-[#6B7280]">{a.description}</p>
                 {a.result && (
-                  <div className="mt-3 flex items-center gap-2">
+                  <div className="mt-3 inline-flex items-center gap-2 rounded-lg bg-[#F5EDD6]/50 px-3 py-2">
                     <Trophy className="size-4 text-[#B89B4A]" />
-                    <span className="font-semibold text-[#B89B4A]">
+                    <span className="text-lg font-bold text-[#B89B4A]">
                       {a.result}
                     </span>
                   </div>

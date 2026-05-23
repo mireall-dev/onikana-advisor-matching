@@ -11,11 +11,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import type {
-  MeetingRequest,
-  User as DbUser,
-  Message,
-} from "@/types/database";
+import type { MeetingRequest, User as DbUser, Message } from "@/types/database";
 
 type ConversationItem = Omit<MeetingRequest, "advisor"> & {
   advisor: DbUser | null;
@@ -38,15 +34,18 @@ export default function CompanyChatPage({
 
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
   const [selectedRequestId, setSelectedRequestId] = useState<string>(
-    initialRequestId ?? ""
+    initialRequestId ?? "",
   );
   const [inputValue, setInputValue] = useState("");
   const [conversationsLoading, setConversationsLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const { messages, loading: messagesLoading, sendMessage } =
-    useRealtimeMessages(selectedRequestId);
+  const {
+    messages,
+    loading: messagesLoading,
+    sendMessage,
+  } = useRealtimeMessages(selectedRequestId);
 
   const fetchConversations = useCallback(async () => {
     if (!user) return;
@@ -73,9 +72,9 @@ export default function CompanyChatPage({
 
           return {
             ...conv,
-            latestMessage: latestMsgs?.[0] as Message | undefined ?? null,
+            latestMessage: (latestMsgs?.[0] as Message | undefined) ?? null,
           };
-        })
+        }),
       );
 
       setConversations(enriched);
@@ -144,7 +143,9 @@ export default function CompanyChatPage({
   }
 
   // Group messages by date
-  function groupMessagesByDate(msgs: Message[]): { date: string; messages: Message[] }[] {
+  function groupMessagesByDate(
+    msgs: Message[],
+  ): { date: string; messages: Message[] }[] {
     const groups: { date: string; messages: Message[] }[] = [];
     let currentDate = "";
 
@@ -161,7 +162,7 @@ export default function CompanyChatPage({
   }
 
   const selectedConversation = conversations.find(
-    (c) => c.id === selectedRequestId
+    (c) => c.id === selectedRequestId,
   );
 
   if (authLoading) {
@@ -217,14 +218,14 @@ export default function CompanyChatPage({
                   className={cn(
                     "w-full border-b border-[#E5E7EB] px-4 py-3 text-left transition-colors hover:bg-[#F8F9FB]",
                     selectedRequestId === conv.id &&
-                      "border-l-2 border-l-[#0F569D] bg-[#E8F0FE]"
+                      "border-l-3 border-l-[#0F569D] bg-[#E8F0FE]/50",
                   )}
                 >
                   <p className="text-sm font-medium text-[#1A1A2E] truncate">
                     {conv.advisor?.display_name ?? "顧問名不明"}
                   </p>
                   {conv.latestMessage ? (
-                    <p className="mt-1 truncate text-xs text-[#6B7280]">
+                    <p className="mt-1 line-clamp-1 text-xs text-[#6B7280]">
                       {conv.latestMessage.content}
                     </p>
                   ) : (
@@ -284,7 +285,7 @@ export default function CompanyChatPage({
                         {conv.advisor?.display_name ?? "顧問名不明"}
                       </p>
                       {conv.latestMessage ? (
-                        <p className="mt-1 truncate text-xs text-[#6B7280]">
+                        <p className="mt-1 line-clamp-1 text-xs text-[#6B7280]">
                           {conv.latestMessage.content}
                         </p>
                       ) : (
@@ -339,8 +340,7 @@ export default function CompanyChatPage({
             {/* Chat Header */}
             <div className="shrink-0 border-b border-[#E5E7EB] bg-white px-6 py-3">
               <p className="text-sm font-bold text-[#1A1A2E]">
-                {selectedConversation?.advisor?.display_name ??
-                  "顧問名不明"}
+                {selectedConversation?.advisor?.display_name ?? "顧問名不明"}
               </p>
               {selectedConversation?.consultation_content && (
                 <p className="mt-0.5 truncate text-xs text-[#6B7280]">
@@ -384,15 +384,15 @@ export default function CompanyChatPage({
                             key={msg.id}
                             className={cn(
                               "mb-3 flex",
-                              isOwn ? "justify-end" : "justify-start"
+                              isOwn ? "justify-end" : "justify-start",
                             )}
                           >
                             <div
                               className={cn(
-                                "max-w-[70%] break-words px-4 py-2",
+                                "max-w-[75%] break-words px-4 py-2",
                                 isOwn
-                                  ? "rounded-2xl rounded-br-sm bg-[#0F569D] text-white"
-                                  : "rounded-2xl rounded-bl-sm bg-[#F8F9FB] text-[#1A1A2E] ring-1 ring-[#E5E7EB]"
+                                  ? "rounded-2xl rounded-br-md bg-[#0F569D] text-white"
+                                  : "rounded-2xl rounded-bl-md bg-[#F8F9FB] text-[#1A1A2E] ring-1 ring-[#E5E7EB]",
                               )}
                             >
                               <p className="text-sm whitespace-pre-wrap">
@@ -400,10 +400,8 @@ export default function CompanyChatPage({
                               </p>
                               <p
                                 className={cn(
-                                  "mt-1 text-xs",
-                                  isOwn
-                                    ? "text-white/70"
-                                    : "text-[#6B7280]"
+                                  "mt-1 text-[10px]",
+                                  isOwn ? "text-white/70" : "text-[#6B7280]",
                                 )}
                               >
                                 {formatTime(msg.created_at)}
@@ -433,7 +431,7 @@ export default function CompanyChatPage({
                 <Button
                   onClick={handleSend}
                   disabled={!inputValue.trim() || sending}
-                  className="bg-[#0F569D] text-white hover:bg-[#0A3D6E]"
+                  className="bg-[#0F569D] text-white hover:bg-[#0A3D6E] transition-transform active:scale-90"
                   size="icon"
                 >
                   {sending ? (
@@ -477,7 +475,9 @@ function MobileChatView({
   handleSend: () => void;
   handleKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   formatTime: (dateStr: string) => string;
-  groupMessagesByDate: (msgs: Message[]) => { date: string; messages: Message[] }[];
+  groupMessagesByDate: (
+    msgs: Message[],
+  ) => { date: string; messages: Message[] }[];
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
   onBack: () => void;
 }) {
@@ -534,15 +534,15 @@ function MobileChatView({
                       key={msg.id}
                       className={cn(
                         "mb-3 flex",
-                        isOwn ? "justify-end" : "justify-start"
+                        isOwn ? "justify-end" : "justify-start",
                       )}
                     >
                       <div
                         className={cn(
-                          "max-w-[80%] break-words px-4 py-2",
+                          "max-w-[75%] break-words px-4 py-2",
                           isOwn
-                            ? "rounded-2xl rounded-br-sm bg-[#0F569D] text-white"
-                            : "rounded-2xl rounded-bl-sm bg-[#F8F9FB] text-[#1A1A2E] ring-1 ring-[#E5E7EB]"
+                            ? "rounded-2xl rounded-br-md bg-[#0F569D] text-white"
+                            : "rounded-2xl rounded-bl-md bg-[#F8F9FB] text-[#1A1A2E] ring-1 ring-[#E5E7EB]",
                         )}
                       >
                         <p className="text-sm whitespace-pre-wrap">
@@ -550,8 +550,8 @@ function MobileChatView({
                         </p>
                         <p
                           className={cn(
-                            "mt-1 text-xs",
-                            isOwn ? "text-white/70" : "text-[#6B7280]"
+                            "mt-1 text-[10px]",
+                            isOwn ? "text-white/70" : "text-[#6B7280]",
                           )}
                         >
                           {formatTime(msg.created_at)}
@@ -581,7 +581,7 @@ function MobileChatView({
           <Button
             onClick={handleSend}
             disabled={!inputValue.trim() || sending}
-            className="bg-[#0F569D] text-white hover:bg-[#0A3D6E]"
+            className="bg-[#0F569D] text-white hover:bg-[#0A3D6E] transition-transform active:scale-90"
             size="icon"
           >
             {sending ? (

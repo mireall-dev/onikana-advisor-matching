@@ -64,6 +64,10 @@
 }
 
 :root {
+  --shadow-card: 0 1px 3px rgba(15, 86, 157, 0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-card-hover: 0 8px 24px rgba(15, 86, 157, 0.12), 0 2px 6px rgba(0,0,0,0.04);
+  --shadow-float: 0 12px 40px rgba(15, 86, 157, 0.15);
+  --shadow-sticky: 0 -2px 12px rgba(0,0,0,0.06);
   --background: #FFFFFF;
   --foreground: #1A1A2E;
   --card: #FFFFFF;
@@ -135,6 +139,12 @@
   );
   border-radius: 3px;
   transform: skewX(-10deg);
+  animation: brushExpand 1s ease-out forwards;
+  transform-origin: left center;
+}
+@keyframes brushExpand {
+  from { clip-path: inset(0 100% 0 0); }
+  to { clip-path: inset(0 0 0 0); }
 }
 
 /* Fade in animation */
@@ -177,9 +187,69 @@
 
 /* Card hover effect */
 .card-hover {
-  transition: transform 200ms ease, box-shadow 200ms ease;
+  box-shadow: var(--shadow-card);
+  transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
 }
 .card-hover:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(15, 86, 157, 0.10);
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-card-hover);
+}
+
+/* Button press feedback */
+button:active:not(:disabled),
+[role="button"]:active:not(:disabled) {
+  transform: scale(0.97);
+  transition: transform 100ms ease;
+}
+
+/* Progress bar animation */
+@keyframes progressBar {
+  0% { width: 0; }
+  50% { width: 70%; }
+  90% { width: 85%; }
+  100% { width: 100%; opacity: 0; }
+}
+.animate-progress-bar {
+  animation: progressBar 1.5s ease-out forwards;
+}
+
+/* Toast notification styling */
+[data-sonner-toast][data-type="success"] {
+  border-left: 4px solid #16A34A !important;
+}
+[data-sonner-toast][data-type="error"] {
+  border-left: 4px solid #D42027 !important;
+}
+[data-sonner-toast][data-type="info"] {
+  border-left: 4px solid #0F569D !important;
+}
+
+/* Float animation for hero cards */
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(var(--float-rotate, 0deg)); }
+  50% { transform: translateY(-6px) rotate(var(--float-rotate, 0deg)); }
+}
+.animate-float {
+  animation: float 3s ease-in-out infinite alternate;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in-up,
+  .stagger-children > *,
+  .animate-count-up {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .card-hover:hover {
+    transform: none;
+  }
+  .animate-float {
+    animation: none !important;
+  }
+  .animate-progress-bar {
+    animation: none !important;
+    width: 100% !important;
+  }
 }

@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { LogOut, Menu } from "lucide-react";
+import { LogOut, Menu, X } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 import { BRAND } from "@/lib/brand";
@@ -146,7 +146,11 @@ export function Header() {
                     />
                   }
                 >
-                  <Menu className="size-5" />
+                  {mobileOpen ? (
+                    <X className="size-5 transition-transform duration-200" />
+                  ) : (
+                    <Menu className="size-5 transition-transform duration-200" />
+                  )}
                 </SheetTrigger>
                 <SheetContent side="right" className="w-72 p-0">
                   <SheetHeader className="border-b border-[#E5E7EB] px-5 py-4">
