@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { User, UserRole } from "@/types/database";
 
@@ -16,6 +17,7 @@ export function useAuth() {
     role: null,
     loading: true,
   });
+  const router = useRouter();
   const supabase = createClient();
 
   useEffect(() => {
@@ -60,6 +62,7 @@ export function useAuth() {
   const signOut = async () => {
     await supabase.auth.signOut();
     setState({ user: null, role: null, loading: false });
+    router.push("/login");
   };
 
   return { ...state, signOut };
