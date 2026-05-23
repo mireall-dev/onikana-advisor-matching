@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { z } from "zod";
@@ -10,7 +10,6 @@ import {
   UserCheck,
   Shield,
   Loader2,
-  ChevronRight,
   ArrowRight,
   type LucideIcon,
 } from "lucide-react";
@@ -38,7 +37,6 @@ interface DemoAccount {
   description: string;
   email: string;
   password: string;
-  redirectTo: string;
   icon: LucideIcon;
   iconBg: string;
   iconColor: string;
@@ -51,7 +49,6 @@ const DEMO_ACCOUNTS: DemoAccount[] = [
     description: "顧問を検索してリクエストを送る",
     email: "demo-company@example.com",
     password: "demo1234",
-    redirectTo: "/company/search",
     icon: Building2,
     iconBg: "bg-[#E8F0FE]",
     iconColor: "text-[#0F569D]",
@@ -62,7 +59,6 @@ const DEMO_ACCOUNTS: DemoAccount[] = [
     description: "受信したリクエストを承認/見送り",
     email: "demo-advisor@example.com",
     password: "demo1234",
-    redirectTo: "/advisor/dashboard",
     icon: UserCheck,
     iconBg: "bg-green-50",
     iconColor: "text-green-700",
@@ -73,7 +69,6 @@ const DEMO_ACCOUNTS: DemoAccount[] = [
     description: "顧問承認 / KPI / 全データ閲覧",
     email: "demo-admin@example.com",
     password: "demo1234",
-    redirectTo: "/admin/dashboard",
     icon: Shield,
     iconBg: "bg-[#F5EDD6]",
     iconColor: "text-[#B89B4A]",
@@ -83,13 +78,13 @@ const DEMO_ACCOUNTS: DemoAccount[] = [
 export default function LoginPage() {
   const router = useRouter();
   const supabase = createClient();
+  const submitButtonRef = useRef<HTMLButtonElement>(null);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const [isLoading, setIsLoading] = useState(false);
-  const [demoLoading, setDemoLoading] = useState<DemoKey | null>(null);
-  const [showEmailForm, setShowEmailForm] = useState(false);
+  const [filledFrom, setFilledFrom] = useState<DemoKey | null>(null);
 
   async function handleLogin(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -147,177 +142,155 @@ export default function LoginPage() {
     }
   }
 
-  async function handleDemoLogin(account: DemoAccount) {
-    setDemoLoading(account.key);
-    try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: account.email,
-        password: account.password,
+  function prefillDemo(account: DemoAccount) {
+    setEmail(account.email);
+    setPassword(account.password);
+    setErrors({});
+    setFilledFrom(account.key);
+    // 入力後にログインボタンへフォーカスを移す → そのまま Enter で送信可能
+    requestAnimationFrame(() => {
+      submitButtonRef.current?.focus();
+      submitButtonRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
       });
-
-      if (error) {
-        toast.error("デモログインに失敗しました", {
-          description: "デモアカウントが設定されていない可能性があります。",
-        });
-        return;
-      }
-
-      toast.success(`${account.title.replace("として体験", "")}でログインしました`);
-      router.push(account.redirectTo);
-    } catch {
-      toast.error("エラーが発生しました", {
-        description: "しばらくしてから再度お試しください。",
-      });
-    } finally {
-      setDemoLoading(null);
-    }
+    });
   }
-
-  const isAnyLoading = isLoading || demoLoading !== null;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#F8F9FB] px-4 py-12">
       <div className="w-full max-w-md mx-auto">
         {/* Header */}
-        <div className="mb-8 text-center">
+        <div className="mb-6 text-center">
           <h1 className="font-heading text-2xl font-bold text-[#1A1A2E]">
             {BRAND.full}
           </h1>
-          <p className="mt-2 text-sm text-[#6B7280]">
-            体験したいロールを選んでログイン
+          <p className="mt-2 text-sm text-[#6B7280]">ログイン</p>
+        </div>
+
+        {/* Demo quick-pick (pre-fills the form below) */}
+        <div className="mb-6 rounded-xl border border-dashed border-[#E5E7EB] bg-white p-4">
+          <p className="mb-3 text-xs font-medium text-[#6B7280]">
+            お試しデモ — 押すと下のフォームに入力されます
           </p>
-        </div>
-
-        {/* Demo role cards (primary) */}
-        <div className="space-y-3" role="list" aria-label="お試しログイン">
-          {DEMO_ACCOUNTS.map((account) => {
-            const Icon = account.icon;
-            const loading = demoLoading === account.key;
-            return (
-              <button
-                key={account.key}
-                type="button"
-                role="listitem"
-                disabled={isAnyLoading}
-                onClick={() => handleDemoLogin(account)}
-                className={cn(
-                  "group flex w-full items-center gap-4 rounded-xl border border-[#E5E7EB] bg-white p-4 text-left shadow-sm transition-all",
-                  "hover:border-[#0F569D] hover:shadow-md hover:-translate-y-0.5",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F569D] focus-visible:ring-offset-2",
-                  "disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:border-[#E5E7EB] disabled:hover:shadow-sm"
-                )}
-              >
-                <span
-                  aria-hidden="true"
+          <div className="space-y-2" role="list" aria-label="デモアカウント">
+            {DEMO_ACCOUNTS.map((account) => {
+              const Icon = account.icon;
+              const active = filledFrom === account.key;
+              return (
+                <button
+                  key={account.key}
+                  type="button"
+                  role="listitem"
+                  disabled={isLoading}
+                  onClick={() => prefillDemo(account)}
                   className={cn(
-                    "flex size-12 shrink-0 items-center justify-center rounded-lg",
-                    account.iconBg
+                    "group flex w-full items-center gap-3 rounded-lg border p-3 text-left transition-all",
+                    "hover:border-[#0F569D] hover:bg-[#F8F9FB]",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F569D] focus-visible:ring-offset-2",
+                    "disabled:cursor-not-allowed disabled:opacity-60",
+                    active
+                      ? "border-[#0F569D] bg-[#E8F0FE]"
+                      : "border-[#E5E7EB] bg-white"
                   )}
+                  aria-pressed={active}
                 >
-                  {loading ? (
-                    <Loader2 className={cn("size-5 animate-spin", account.iconColor)} />
-                  ) : (
-                    <Icon className={cn("size-6", account.iconColor)} />
-                  )}
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block font-semibold text-[#1A1A2E]">
-                    {account.title}
+                  <span
+                    aria-hidden="true"
+                    className={cn(
+                      "flex size-9 shrink-0 items-center justify-center rounded-md",
+                      account.iconBg
+                    )}
+                  >
+                    <Icon className={cn("size-5", account.iconColor)} />
                   </span>
-                  <span className="mt-0.5 block text-xs text-[#6B7280]">
-                    {account.description}
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-semibold text-[#1A1A2E]">
+                      {account.title}
+                    </span>
+                    <span className="block truncate text-xs text-[#6B7280]">
+                      {account.email}
+                    </span>
                   </span>
-                </span>
-                <ChevronRight
-                  aria-hidden="true"
-                  className="size-5 shrink-0 text-[#6B7280] transition-transform group-hover:translate-x-0.5 group-hover:text-[#0F569D]"
-                />
-              </button>
-            );
-          })}
+                  <ArrowRight
+                    aria-hidden="true"
+                    className={cn(
+                      "size-4 shrink-0 transition-colors",
+                      active ? "text-[#0F569D]" : "text-[#6B7280]"
+                    )}
+                  />
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        {/* Email login (secondary, collapsible) */}
-        <div className="mt-8">
-          {!showEmailForm ? (
-            <div className="text-center">
-              <button
-                type="button"
-                onClick={() => setShowEmailForm(true)}
-                disabled={isAnyLoading}
-                className="text-sm text-[#6B7280] underline-offset-4 hover:text-[#0F569D] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F569D] focus-visible:ring-offset-2 rounded"
-              >
-                メールアドレスでログインする
-              </button>
-            </div>
-          ) : (
-            <div className="rounded-xl border border-[#E5E7EB] bg-white p-5 shadow-sm animate-fade-in-up">
-              <h2 className="text-sm font-semibold text-[#1A1A2E]">
-                メールアドレスでログイン
-              </h2>
-              <form
-                onSubmit={handleLogin}
-                className="mt-4 space-y-4"
-                noValidate
-              >
-                <FormField
-                  label="メールアドレス"
-                  htmlFor="email"
-                  error={errors.email}
-                  required
-                >
-                  <Input
-                    id="email"
-                    type="email"
-                    autoComplete="email"
-                    placeholder="example@company.co.jp"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    disabled={isAnyLoading}
-                  />
-                </FormField>
+        {/* Email + password login (primary) */}
+        <div className="rounded-xl border border-[#E5E7EB] bg-white p-6 shadow-sm">
+          <form onSubmit={handleLogin} className="space-y-4" noValidate>
+            <FormField
+              label="メールアドレス"
+              htmlFor="email"
+              error={errors.email}
+              required
+            >
+              <Input
+                id="email"
+                type="email"
+                autoComplete="email"
+                placeholder="example@company.co.jp"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (filledFrom) setFilledFrom(null);
+                }}
+                required
+                disabled={isLoading}
+              />
+            </FormField>
 
-                <FormField
-                  label="パスワード"
-                  htmlFor="password"
-                  error={errors.password}
-                  hint="8文字以上"
-                  required
-                >
-                  <Input
-                    id="password"
-                    type="password"
-                    autoComplete="current-password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    minLength={8}
-                    disabled={isAnyLoading}
-                  />
-                </FormField>
+            <FormField
+              label="パスワード"
+              htmlFor="password"
+              error={errors.password}
+              hint="8文字以上"
+              required
+            >
+              <Input
+                id="password"
+                type="password"
+                autoComplete="current-password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (filledFrom) setFilledFrom(null);
+                }}
+                required
+                minLength={8}
+                disabled={isLoading}
+              />
+            </FormField>
 
-                <Button
-                  type="submit"
-                  disabled={isAnyLoading}
-                  className="w-full bg-[#0F569D] hover:bg-[#0A3D6E] text-white"
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 aria-hidden="true" className="size-4 animate-spin" />
-                      ログイン中...
-                    </>
-                  ) : (
-                    <>
-                      ログイン
-                      <ArrowRight aria-hidden="true" className="size-4" />
-                    </>
-                  )}
-                </Button>
-              </form>
-            </div>
-          )}
+            <Button
+              ref={submitButtonRef}
+              type="submit"
+              disabled={isLoading}
+              className="w-full bg-[#0F569D] hover:bg-[#0A3D6E] text-white"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 aria-hidden="true" className="size-4 animate-spin" />
+                  ログイン中...
+                </>
+              ) : (
+                <>
+                  ログイン
+                  <ArrowRight aria-hidden="true" className="size-4" />
+                </>
+              )}
+            </Button>
+          </form>
         </div>
 
         {/* Sign-up link */}
