@@ -1,12 +1,9 @@
-"use client";
-
-import { useEffect, useState, useCallback, useMemo } from "react";
-import { useRouter } from "next/navigation";
 import { format } from "date-fns";
-import { Loader2, Check, Minus } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
-import { useAuth } from "@/hooks/use-auth";
+import { Check, Minus } from "lucide-react";
+import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/auth/server";
 import { Badge } from "@/components/ui/badge";
+import { ErrorState } from "@/components/shared/states";
 import {
   Table,
   TableBody,
@@ -20,8 +17,6 @@ import type {
   User,
   MeetingRequest,
   Payment,
-  PaymentStatus,
-  StripePaymentStatus,
 } from "@/types/database";
 
 type MatchWithRelations = Match & {
@@ -41,11 +36,7 @@ const PAYMENT_STATUS_CONFIG: Record<
   failed: { label: "失敗", bg: "bg-red-50", text: "text-red-700" },
 };
 
-function PaymentStatusBadge({
-  status,
-}: {
-  status: string;
-}) {
+function PaymentStatusBadge({ status }: { status: string }) {
   const config = PAYMENT_STATUS_CONFIG[status] ?? {
     label: "不明",
     bg: "bg-gray-100",
@@ -62,77 +53,48 @@ function PaymentStatusBadge({
   );
 }
 
-export default function MatchesPage() {
-  const router = useRouter();
-  const { user, role, loading: authLoading } = useAuth();
-  const supabase = createClient();
+function getPaymentStatusForMatch(
+  matchItem: MatchWithRelations,
+  paymentMap: Map<string, Payment>
+): string {
+  if (matchItem.payment_status) return matchItem.payment_status;
+  const payment = paymentMap.get(matchItem.id);
+  if (payment) {
+    if (payment.status === "succeeded") return "paid";
+    if (payment.status === "failed") return "failed";
+    return "pending";
+  }
+  return "unpaid";
+}
 
-  const [matches, setMatches] = useState<MatchWithRelations[]>([]);
-  const [payments, setPayments] = useState<Payment[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+export default async function MatchesPage() {
+  await requireAdmin();
+  const supabase = await createClient();
 
-  const fetchData = useCallback(async () => {
-    setIsLoading(true);
+  const [matchesRes, paymentsRes] = await Promise.all([
+    supabase
+      .from("matches")
+      .select(
+        "*, company:users!company_id(display_name), advisor:users!advisor_id(display_name), request:meeting_requests!request_id(*)"
+      )
+      .order("created_at", { ascending: false }),
+    supabase.from("payments").select("*"),
+  ]);
 
-    const [matchesRes, paymentsRes] = await Promise.all([
-      supabase
-        .from("matches")
-        .select(
-          "*, company:users!company_id(display_name), advisor:users!advisor_id(display_name), request:meeting_requests!request_id(*)"
-        )
-        .order("created_at", { ascending: false }),
-      supabase.from("payments").select("*"),
-    ]);
-
-    if (matchesRes.data) {
-      setMatches(matchesRes.data as MatchWithRelations[]);
-    }
-    if (paymentsRes.data) {
-      setPayments(paymentsRes.data as Payment[]);
-    }
-
-    setIsLoading(false);
-  }, [supabase]);
-
-  useEffect(() => {
-    if (authLoading) return;
-    if (!user || role !== "admin") {
-      router.push("/login");
-      return;
-    }
-    fetchData();
-  }, [authLoading, user, role, router, fetchData]);
-
-  const paymentMap = useMemo(() => {
-    const map = new Map<string, Payment>();
-    for (const payment of payments) {
-      map.set(payment.match_id, payment);
-    }
-    return map;
-  }, [payments]);
-
-  if (authLoading || isLoading) {
+  if (matchesRes.error || paymentsRes.error) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <Loader2 className="size-8 animate-spin text-[#0F569D]" />
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <ErrorState title="マッチングデータの取得に失敗しました" />
       </div>
     );
   }
 
-  function getPaymentStatusForMatch(matchItem: MatchWithRelations): string {
-    // First check the payment_status field on the match itself
-    if (matchItem.payment_status) {
-      return matchItem.payment_status;
-    }
-    // Then check the payments table
-    const payment = paymentMap.get(matchItem.id);
-    if (payment) {
-      // Map StripePaymentStatus to display status
-      if (payment.status === "succeeded") return "paid";
-      if (payment.status === "failed") return "failed";
-      return "pending";
-    }
-    return "unpaid";
+  const matches = (matchesRes.data ?? []) as MatchWithRelations[];
+  const payments = (paymentsRes.data ?? []) as Payment[];
+
+  const paymentMap = new Map<string, Payment>();
+  for (const payment of payments) {
+    paymentMap.set(payment.match_id, payment);
   }
 
   return (
@@ -144,7 +106,6 @@ export default function MatchesPage() {
         </p>
       </div>
 
-      {/* Table */}
       <div className="animate-fade-in-up rounded-xl border border-[#E5E7EB] bg-white">
         {matches.length === 0 ? (
           <p className="py-12 text-center text-sm text-[#6B7280]">
@@ -165,7 +126,7 @@ export default function MatchesPage() {
             </TableHeader>
             <TableBody>
               {matches.map((matchItem) => {
-                const paymentStatus = getPaymentStatusForMatch(matchItem);
+                const paymentStatus = getPaymentStatusForMatch(matchItem, paymentMap);
 
                 return (
                   <TableRow key={matchItem.id} className="border-[#E5E7EB]">
@@ -216,10 +177,7 @@ export default function MatchesPage() {
                     </TableCell>
                     <TableCell className="text-[#6B7280]">
                       {matchItem.matched_at
-                        ? format(
-                            new Date(matchItem.matched_at),
-                            "yyyy/MM/dd HH:mm"
-                          )
+                        ? format(new Date(matchItem.matched_at), "yyyy/MM/dd HH:mm")
                         : "-"}
                     </TableCell>
                     <TableCell>

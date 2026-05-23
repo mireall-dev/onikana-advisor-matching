@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { FormField } from "@/components/shared/form-field";
 import {
   Select,
   SelectContent,
@@ -364,11 +365,11 @@ export default function RegisterPage() {
             </CardHeader>
 
             <CardContent>
-              <form onSubmit={handleCompanyRegister} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="companyName">会社名</Label>
+              <form onSubmit={handleCompanyRegister} className="space-y-4" noValidate>
+                <FormField label="会社名" htmlFor="companyName" error={companyErrors.companyName} required>
                   <Input
                     id="companyName"
+                    autoComplete="organization"
                     placeholder="株式会社サンプル"
                     value={companyForm.companyName}
                     onChange={(e) =>
@@ -376,17 +377,13 @@ export default function RegisterPage() {
                     }
                     required
                     disabled={isLoading}
-                    className={companyErrors.companyName ? "border-[#D42027]" : ""}
                   />
-                  {companyErrors.companyName && (
-                    <p className="text-[#D42027] text-sm">{companyErrors.companyName}</p>
-                  )}
-                </div>
+                </FormField>
 
-                <div className="space-y-2">
-                  <Label htmlFor="contactName">担当者名</Label>
+                <FormField label="担当者名" htmlFor="contactName" error={companyErrors.contactName} required>
                   <Input
                     id="contactName"
+                    autoComplete="name"
                     placeholder="山田 太郎"
                     value={companyForm.contactName}
                     onChange={(e) =>
@@ -394,18 +391,14 @@ export default function RegisterPage() {
                     }
                     required
                     disabled={isLoading}
-                    className={companyErrors.contactName ? "border-[#D42027]" : ""}
                   />
-                  {companyErrors.contactName && (
-                    <p className="text-[#D42027] text-sm">{companyErrors.contactName}</p>
-                  )}
-                </div>
+                </FormField>
 
-                <div className="space-y-2">
-                  <Label htmlFor="companyEmail">メールアドレス</Label>
+                <FormField label="メールアドレス" htmlFor="companyEmail" error={companyErrors.email} required>
                   <Input
                     id="companyEmail"
                     type="email"
+                    autoComplete="email"
                     placeholder="example@company.co.jp"
                     value={companyForm.email}
                     onChange={(e) =>
@@ -413,19 +406,21 @@ export default function RegisterPage() {
                     }
                     required
                     disabled={isLoading}
-                    className={companyErrors.email ? "border-[#D42027]" : ""}
                   />
-                  {companyErrors.email && (
-                    <p className="text-[#D42027] text-sm">{companyErrors.email}</p>
-                  )}
-                </div>
+                </FormField>
 
-                <div className="space-y-2">
-                  <Label htmlFor="companyPassword">パスワード</Label>
+                <FormField
+                  label="パスワード"
+                  htmlFor="companyPassword"
+                  error={companyErrors.password}
+                  hint="8文字以上"
+                  required
+                >
                   <Input
                     id="companyPassword"
                     type="password"
-                    placeholder="8文字以上"
+                    autoComplete="new-password"
+                    placeholder="••••••••"
                     value={companyForm.password}
                     onChange={(e) =>
                       setCompanyForm({ ...companyForm, password: e.target.value })
@@ -433,15 +428,10 @@ export default function RegisterPage() {
                     required
                     minLength={8}
                     disabled={isLoading}
-                    className={companyErrors.password ? "border-[#D42027]" : ""}
                   />
-                  {companyErrors.password && (
-                    <p className="text-[#D42027] text-sm">{companyErrors.password}</p>
-                  )}
-                </div>
+                </FormField>
 
-                <div className="space-y-2">
-                  <Label>業界</Label>
+                <FormField label="業界" error={companyErrors.industry} required>
                   <Select
                     value={companyForm.industry}
                     onValueChange={(val) =>
@@ -449,7 +439,7 @@ export default function RegisterPage() {
                     }
                     disabled={isLoading}
                   >
-                    <SelectTrigger className={`w-full ${companyErrors.industry ? "border-[#D42027]" : ""}`}>
+                    <SelectTrigger className="w-full" aria-label="業界">
                       <SelectValue placeholder="業界を選択" />
                     </SelectTrigger>
                     <SelectContent>
@@ -460,13 +450,9 @@ export default function RegisterPage() {
                       ))}
                     </SelectContent>
                   </Select>
-                  {companyErrors.industry && (
-                    <p className="text-[#D42027] text-sm">{companyErrors.industry}</p>
-                  )}
-                </div>
+                </FormField>
 
-                <div className="space-y-2">
-                  <Label>従業員規模</Label>
+                <FormField label="従業員規模" error={companyErrors.employeeScale} required>
                   <Select
                     value={companyForm.employeeScale}
                     onValueChange={(val) =>
@@ -474,7 +460,7 @@ export default function RegisterPage() {
                     }
                     disabled={isLoading}
                   >
-                    <SelectTrigger className={`w-full ${companyErrors.employeeScale ? "border-[#D42027]" : ""}`}>
+                    <SelectTrigger className="w-full" aria-label="従業員規模">
                       <SelectValue placeholder="従業員規模を選択" />
                     </SelectTrigger>
                     <SelectContent>
@@ -485,13 +471,9 @@ export default function RegisterPage() {
                       ))}
                     </SelectContent>
                   </Select>
-                  {companyErrors.employeeScale && (
-                    <p className="text-[#D42027] text-sm">{companyErrors.employeeScale}</p>
-                  )}
-                </div>
+                </FormField>
 
-                <div className="space-y-2">
-                  <Label htmlFor="salesChallenge">営業課題</Label>
+                <FormField label="営業課題" htmlFor="salesChallenge">
                   <Textarea
                     id="salesChallenge"
                     placeholder="例: 新規顧客の開拓が進まない、大手企業へのアプローチ方法がわからない"
@@ -502,7 +484,7 @@ export default function RegisterPage() {
                     disabled={isLoading}
                     rows={3}
                   />
-                </div>
+                </FormField>
 
                 <Button
                   type="submit"
@@ -547,11 +529,11 @@ export default function RegisterPage() {
             </CardHeader>
 
             <CardContent>
-              <form onSubmit={handleAdvisorRegister} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="advisorName">氏名</Label>
+              <form onSubmit={handleAdvisorRegister} className="space-y-4" noValidate>
+                <FormField label="氏名" htmlFor="advisorName" error={advisorErrors.name} required>
                   <Input
                     id="advisorName"
+                    autoComplete="name"
                     placeholder="鈴木 一郎"
                     value={advisorForm.name}
                     onChange={(e) =>
@@ -559,18 +541,14 @@ export default function RegisterPage() {
                     }
                     required
                     disabled={isLoading}
-                    className={advisorErrors.name ? "border-[#D42027]" : ""}
                   />
-                  {advisorErrors.name && (
-                    <p className="text-[#D42027] text-sm">{advisorErrors.name}</p>
-                  )}
-                </div>
+                </FormField>
 
-                <div className="space-y-2">
-                  <Label htmlFor="advisorEmail">メールアドレス</Label>
+                <FormField label="メールアドレス" htmlFor="advisorEmail" error={advisorErrors.email} required>
                   <Input
                     id="advisorEmail"
                     type="email"
+                    autoComplete="email"
                     placeholder="example@advisor.co.jp"
                     value={advisorForm.email}
                     onChange={(e) =>
@@ -578,19 +556,21 @@ export default function RegisterPage() {
                     }
                     required
                     disabled={isLoading}
-                    className={advisorErrors.email ? "border-[#D42027]" : ""}
                   />
-                  {advisorErrors.email && (
-                    <p className="text-[#D42027] text-sm">{advisorErrors.email}</p>
-                  )}
-                </div>
+                </FormField>
 
-                <div className="space-y-2">
-                  <Label htmlFor="advisorPassword">パスワード</Label>
+                <FormField
+                  label="パスワード"
+                  htmlFor="advisorPassword"
+                  error={advisorErrors.password}
+                  hint="8文字以上"
+                  required
+                >
                   <Input
                     id="advisorPassword"
                     type="password"
-                    placeholder="8文字以上"
+                    autoComplete="new-password"
+                    placeholder="••••••••"
                     value={advisorForm.password}
                     onChange={(e) =>
                       setAdvisorForm({ ...advisorForm, password: e.target.value })
@@ -598,12 +578,8 @@ export default function RegisterPage() {
                     required
                     minLength={8}
                     disabled={isLoading}
-                    className={advisorErrors.password ? "border-[#D42027]" : ""}
                   />
-                  {advisorErrors.password && (
-                    <p className="text-[#D42027] text-sm">{advisorErrors.password}</p>
-                  )}
-                </div>
+                </FormField>
 
                 <div className="space-y-2">
                   <Label>得意業界</Label>

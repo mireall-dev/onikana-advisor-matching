@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
-import { Search } from "lucide-react";
+import { Search, SlidersHorizontal } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -14,7 +14,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { AdvisorCard } from "@/components/shared/advisor-card";
+import { EmptyState } from "@/components/shared/states";
 import type { AdvisorProfile, User } from "@/types/database";
 import { INDUSTRIES, SPECIALTIES, AREAS } from "@/types/database";
 
@@ -28,6 +37,12 @@ export default function SearchPage() {
   const [area, setArea] = useState("");
   const [recommended, setRecommended] = useState<AdvisorWithUser[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filterOpen, setFilterOpen] = useState(false);
+
+  const activeFilterCount = useMemo(
+    () => [industry, specialty, area].filter(Boolean).length,
+    [industry, specialty, area]
+  );
 
   useEffect(() => {
     async function fetchRecommended() {
@@ -84,15 +99,107 @@ export default function SearchPage() {
           </p>
 
           {/* Search Form */}
-          <div className="mx-auto mt-10 max-w-4xl rounded-xl bg-white p-6 shadow-sm ring-1 ring-[#E5E7EB]">
-            <div className="flex flex-col gap-4 md:flex-row md:items-end">
+          <div className="mx-auto mt-10 max-w-4xl rounded-xl bg-white p-4 shadow-sm ring-1 ring-[#E5E7EB] sm:p-6">
+            {/* Mobile: keyword + filter sheet trigger + search */}
+            <div className="flex flex-col gap-3 md:hidden">
+              <label className="block text-sm font-medium text-[#1A1A2E]" htmlFor="search-keyword-mobile">
+                キーワード
+              </label>
+              <div className="relative">
+                <Search aria-hidden="true" className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#6B7280]" />
+                <Input
+                  id="search-keyword-mobile"
+                  placeholder="キーワードで検索..."
+                  value={keyword}
+                  onChange={(e) => setKeyword(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  className="pl-9"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <Sheet open={filterOpen} onOpenChange={setFilterOpen}>
+                  <SheetTrigger
+                    render={
+                      <Button
+                        variant="outline"
+                        className="flex-1 justify-center gap-2"
+                      />
+                    }
+                  >
+                    <SlidersHorizontal aria-hidden="true" className="size-4" />
+                    絞り込み
+                    {activeFilterCount > 0 && (
+                      <Badge className="ml-1 bg-[#0F569D] text-white">
+                        {activeFilterCount}
+                      </Badge>
+                    )}
+                  </SheetTrigger>
+                  <SheetContent side="bottom" className="rounded-t-2xl p-0">
+                    <SheetHeader className="border-b border-[#E5E7EB] px-5 py-4">
+                      <SheetTitle className="text-left">絞り込み</SheetTitle>
+                    </SheetHeader>
+                    <div className="space-y-4 px-5 py-4">
+                      <FilterSelect
+                        label="業界"
+                        value={industry}
+                        onChange={setIndustry}
+                        options={INDUSTRIES}
+                      />
+                      <FilterSelect
+                        label="営業領域"
+                        value={specialty}
+                        onChange={setSpecialty}
+                        options={SPECIALTIES}
+                      />
+                      <FilterSelect
+                        label="エリア"
+                        value={area}
+                        onChange={setArea}
+                        options={AREAS}
+                      />
+                    </div>
+                    <div className="flex items-center gap-2 border-t border-[#E5E7EB] px-5 py-4">
+                      <Button
+                        variant="ghost"
+                        className="flex-1"
+                        onClick={() => {
+                          setIndustry("");
+                          setSpecialty("");
+                          setArea("");
+                        }}
+                      >
+                        クリア
+                      </Button>
+                      <SheetClose
+                        render={
+                          <Button className="flex-1 bg-[#0F569D] text-white hover:bg-[#0A3D6E]" />
+                        }
+                      >
+                        この条件で適用
+                      </SheetClose>
+                    </div>
+                  </SheetContent>
+                </Sheet>
+                <Button
+                  onClick={handleSearch}
+                  className="flex-1 bg-[#0F569D] text-white hover:bg-[#0A3D6E]"
+                >
+                  <Search aria-hidden="true" className="mr-2 size-4" />
+                  検索
+                </Button>
+              </div>
+            </div>
+
+            {/* Desktop: full row */}
+            <div className="hidden md:flex md:flex-row md:items-end md:gap-4">
               <div className="flex-1">
-                <label className="mb-1.5 block text-sm font-medium text-[#1A1A2E]">
+                <label className="mb-1.5 block text-sm font-medium text-[#1A1A2E]" htmlFor="search-keyword">
                   キーワード
                 </label>
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#6B7280]" />
+                  <Search aria-hidden="true" className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#6B7280]" />
                   <Input
+                    id="search-keyword"
                     placeholder="キーワードで検索..."
                     value={keyword}
                     onChange={(e) => setKeyword(e.target.value)}
@@ -102,77 +209,33 @@ export default function SearchPage() {
                 </div>
               </div>
 
-              <div className="min-w-[140px]">
-                <label className="mb-1.5 block text-sm font-medium text-[#1A1A2E]">
-                  業界
-                </label>
-                <Select
-                  value={industry}
-                  onValueChange={(val) => setIndustry(val === "__all__" ? "" : val ?? "")}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="すべて" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__all__">すべて</SelectItem>
-                    {INDUSTRIES.map((ind) => (
-                      <SelectItem key={ind} value={ind}>
-                        {ind}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="min-w-[160px]">
-                <label className="mb-1.5 block text-sm font-medium text-[#1A1A2E]">
-                  営業領域
-                </label>
-                <Select
-                  value={specialty}
-                  onValueChange={(val) => setSpecialty(val === "__all__" ? "" : val ?? "")}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="すべて" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__all__">すべて</SelectItem>
-                    {SPECIALTIES.map((sp) => (
-                      <SelectItem key={sp} value={sp}>
-                        {sp}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="min-w-[140px]">
-                <label className="mb-1.5 block text-sm font-medium text-[#1A1A2E]">
-                  エリア
-                </label>
-                <Select
-                  value={area}
-                  onValueChange={(val) => setArea(val === "__all__" ? "" : val ?? "")}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="すべて" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__all__">すべて</SelectItem>
-                    {AREAS.map((a) => (
-                      <SelectItem key={a} value={a}>
-                        {a}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <FilterSelect
+                label="業界"
+                value={industry}
+                onChange={setIndustry}
+                options={INDUSTRIES}
+                className="min-w-[140px]"
+              />
+              <FilterSelect
+                label="営業領域"
+                value={specialty}
+                onChange={setSpecialty}
+                options={SPECIALTIES}
+                className="min-w-[160px]"
+              />
+              <FilterSelect
+                label="エリア"
+                value={area}
+                onChange={setArea}
+                options={AREAS}
+                className="min-w-[140px]"
+              />
 
               <Button
                 onClick={handleSearch}
                 className="bg-[#0F569D] text-white hover:bg-[#0A3D6E]"
               >
-                <Search className="mr-2 size-4" />
+                <Search aria-hidden="true" className="mr-2 size-4" />
                 検索
               </Button>
             </div>
@@ -210,20 +273,52 @@ export default function SearchPage() {
             ))}
           </div>
         ) : (
-          <div className="mt-8 flex flex-col items-center justify-center py-8 text-center">
-            <Image
-              src="/images/empty-search.png"
-              alt=""
-              width={180}
-              height={180}
-              className="pointer-events-none"
-            />
-            <p className="mt-4 text-[#6B7280]">
-              現在おすすめの顧問がいません。
-            </p>
-          </div>
+          <EmptyState
+            variant="search"
+            title="現在おすすめの顧問がいません"
+            description="しばらくしてから再度ご確認ください"
+            className="mt-8"
+          />
         )}
       </section>
+    </div>
+  );
+}
+
+function FilterSelect({
+  label,
+  value,
+  onChange,
+  options,
+  className,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: readonly string[];
+  className?: string;
+}) {
+  return (
+    <div className={className}>
+      <label className="mb-1.5 block text-sm font-medium text-[#1A1A2E]">
+        {label}
+      </label>
+      <Select
+        value={value || "__all__"}
+        onValueChange={(val) => onChange(val === "__all__" ? "" : val ?? "")}
+      >
+        <SelectTrigger className="w-full" aria-label={label}>
+          <SelectValue placeholder="すべて" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="__all__">すべて</SelectItem>
+          {options.map((opt) => (
+            <SelectItem key={opt} value={opt}>
+              {opt}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </div>
   );
 }

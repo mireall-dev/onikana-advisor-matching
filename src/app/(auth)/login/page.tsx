@@ -7,11 +7,12 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { Building2, UserCheck, Shield, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { BRAND } from "@/lib/brand";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { FormField } from "@/components/shared/form-field";
 import type { UserRole } from "@/types/database";
 
 const loginSchema = z.object({
@@ -131,46 +132,49 @@ export default function LoginPage() {
               ログイン
             </CardTitle>
             <CardDescription className="text-sm text-[#6B7280] text-center">
-              オニカナ顧問マッチング
+              {BRAND.full}
             </CardDescription>
           </CardHeader>
 
           <CardContent className="space-y-6">
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">メールアドレス</Label>
+            <form onSubmit={handleLogin} className="space-y-4" noValidate>
+              <FormField
+                label="メールアドレス"
+                htmlFor="email"
+                error={errors.email}
+                required
+              >
                 <Input
                   id="email"
                   type="email"
+                  autoComplete="email"
                   placeholder="example@company.co.jp"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   disabled={isAnyLoading}
-                  className={errors.email ? "border-[#D42027]" : ""}
                 />
-                {errors.email && (
-                  <p className="text-[#D42027] text-sm">{errors.email}</p>
-                )}
-              </div>
+              </FormField>
 
-              <div className="space-y-2">
-                <Label htmlFor="password">パスワード</Label>
+              <FormField
+                label="パスワード"
+                htmlFor="password"
+                error={errors.password}
+                hint="8文字以上"
+                required
+              >
                 <Input
                   id="password"
                   type="password"
-                  placeholder="8文字以上"
+                  autoComplete="current-password"
+                  placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   minLength={8}
                   disabled={isAnyLoading}
-                  className={errors.password ? "border-[#D42027]" : ""}
                 />
-                {errors.password && (
-                  <p className="text-[#D42027] text-sm">{errors.password}</p>
-                )}
-              </div>
+              </FormField>
 
               <Button
                 type="submit"

@@ -1,19 +1,6 @@
-"use client";
-
-import { useEffect, useState, useCallback, useMemo } from "react";
-import { useRouter } from "next/navigation";
 import { format } from "date-fns";
-import Image from "next/image";
-import { Loader2 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
-import { useAuth } from "@/hooks/use-auth";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/auth/server";
 import {
   Table,
   TableBody,
@@ -23,9 +10,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { StatusBadge } from "@/components/shared/status-badge";
+import { EmptyState, ErrorState } from "@/components/shared/states";
 import type { MeetingRequest, RequestStatus, User } from "@/types/database";
-
-type StatusFilter = "all" | RequestStatus;
+import { RequestStatusFilter, type StatusFilter } from "./_components/status-filter";
 
 type RequestWithUsers = MeetingRequest & {
   company: Pick<User, "display_name"> | null;
@@ -41,51 +28,42 @@ function shortenId(id: string): string {
   return id.slice(0, 8);
 }
 
-export default function RequestsPage() {
-  const router = useRouter();
-  const { user, role, loading: authLoading } = useAuth();
-  const supabase = createClient();
+function parseStatus(value: string | undefined): StatusFilter {
+  if (value === "pending" || value === "approved" || value === "rejected")
+    return value;
+  return "all";
+}
 
-  const [requests, setRequests] = useState<RequestWithUsers[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+export default async function RequestsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ status?: string }>;
+}) {
+  await requireAdmin();
+  const sp = await searchParams;
+  const statusFilter = parseStatus(sp.status);
 
-  const fetchRequests = useCallback(async () => {
-    setIsLoading(true);
-    const { data } = await supabase
-      .from("meeting_requests")
-      .select(
-        "*, company:users!company_id(display_name), advisor:users!advisor_id(display_name)"
-      )
-      .order("created_at", { ascending: false });
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("meeting_requests")
+    .select(
+      "*, company:users!company_id(display_name), advisor:users!advisor_id(display_name)"
+    )
+    .order("created_at", { ascending: false });
 
-    if (data) {
-      setRequests(data as RequestWithUsers[]);
-    }
-    setIsLoading(false);
-  }, [supabase]);
-
-  useEffect(() => {
-    if (authLoading) return;
-    if (!user || role !== "admin") {
-      router.push("/login");
-      return;
-    }
-    fetchRequests();
-  }, [authLoading, user, role, router, fetchRequests]);
-
-  const filteredRequests = useMemo(() => {
-    if (statusFilter === "all") return requests;
-    return requests.filter((r) => r.status === statusFilter);
-  }, [requests, statusFilter]);
-
-  if (authLoading || isLoading) {
+  if (error) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <Loader2 className="size-8 animate-spin text-[#0F569D]" />
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <ErrorState title="リクエストの取得に失敗しました" />
       </div>
     );
   }
+
+  const requests = (data ?? []) as RequestWithUsers[];
+  const filteredRequests =
+    statusFilter === "all"
+      ? requests
+      : requests.filter((r) => r.status === (statusFilter as RequestStatus));
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -96,39 +74,13 @@ export default function RequestsPage() {
         </p>
       </div>
 
-      {/* Filter */}
       <div className="animate-fade-in-up mb-6">
-        <Select
-          value={statusFilter}
-          onValueChange={(val) => { if (val !== null) setStatusFilter(val as StatusFilter); }}
-        >
-          <SelectTrigger className="w-[160px]">
-            <SelectValue placeholder="ステータスで絞り込み" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">すべて</SelectItem>
-            <SelectItem value="pending">申請中</SelectItem>
-            <SelectItem value="approved">承認済</SelectItem>
-            <SelectItem value="rejected">見送り</SelectItem>
-          </SelectContent>
-        </Select>
+        <RequestStatusFilter active={statusFilter} />
       </div>
 
-      {/* Table */}
       <div className="animate-fade-in-up rounded-xl border border-[#E5E7EB] bg-white">
         {filteredRequests.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <Image
-              src="/images/empty-inbox.png"
-              alt=""
-              width={180}
-              height={180}
-              className="pointer-events-none"
-            />
-            <p className="mt-4 text-sm text-[#6B7280]">
-              該当するリクエストはありません
-            </p>
-          </div>
+          <EmptyState title="該当するリクエストはありません" />
         ) : (
           <Table>
             <TableHeader>
