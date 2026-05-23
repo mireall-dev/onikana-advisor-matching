@@ -73,7 +73,7 @@ export default function AdvisorChatPage({
 
           return {
             ...conv,
-            latestMessage: latestMsgs?.[0] as Message | undefined ?? null,
+            latestMessage: (latestMsgs?.[0] ?? null) as Message | null,
           };
         })
       );
@@ -350,7 +350,7 @@ export default function AdvisorChatPage({
             </div>
 
             {/* Messages Area */}
-            <ScrollArea className="flex-1 bg-[#F8F9FB]">
+            <ScrollArea className="min-h-0 flex-1 bg-[#F8F9FB]">
               <div className="px-6 py-4">
                 {messagesLoading ? (
                   <div className="flex items-center justify-center py-12">
@@ -500,7 +500,7 @@ function MobileChatView({
       </div>
 
       {/* Messages */}
-      <ScrollArea className="flex-1 bg-[#F8F9FB]">
+      <ScrollArea className="min-h-0 flex-1 bg-[#F8F9FB]">
         <div className="px-4 py-4">
           {messagesLoading ? (
             <div className="flex items-center justify-center py-12">

@@ -10,6 +10,12 @@ export function useRealtimeMessages(requestId: string) {
   const supabase = createClient();
 
   useEffect(() => {
+    if (!requestId) {
+      setMessages([]);
+      setLoading(false);
+      return;
+    }
+
     async function fetchMessages() {
       const { data } = await supabase
         .from("messages")
