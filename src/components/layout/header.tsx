@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import { LogOut, Menu } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
+import { BRAND } from "@/lib/brand";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -71,7 +72,7 @@ export function Header() {
         >
           <Image
             src="/images/logo.png"
-            alt="オニカナ顧問マッチング"
+            alt={BRAND.full}
             width={160}
             height={40}
             className="h-9 w-auto"
@@ -81,11 +82,15 @@ export function Header() {
 
         {/* Desktop Navigation */}
         {!loading && user && role && (
-          <nav className="hidden items-center gap-1 md:flex">
+          <nav
+            aria-label="メインナビゲーション"
+            className="hidden items-center gap-1 md:flex"
+          >
             {navItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
+                aria-current={isActive(item.href) ? "page" : undefined}
                 className={cn(
                   "relative px-3 py-2 text-sm font-medium transition-colors",
                   isActive(item.href)
@@ -95,7 +100,10 @@ export function Header() {
               >
                 {item.label}
                 {isActive(item.href) && (
-                  <span className="absolute inset-x-3 -bottom-[calc(0.5rem+1px)] h-0.5 rounded-full bg-[#0F569D]" />
+                  <span
+                    aria-hidden="true"
+                    className="absolute inset-x-3 -bottom-[calc(0.5rem+1px)] h-0.5 rounded-full bg-[#0F569D]"
+                  />
                 )}
               </Link>
             ))}
@@ -155,13 +163,17 @@ export function Header() {
                         {ROLE_LABELS[role]}
                       </Badge>
                     </div>
-                    <nav className="flex flex-col gap-1">
+                    <nav
+                      aria-label="メインナビゲーション"
+                      className="flex flex-col gap-1"
+                    >
                       {navItems.map((item) => (
                         <SheetClose
                           key={item.href}
                           render={
                             <Link
                               href={item.href}
+                              aria-current={isActive(item.href) ? "page" : undefined}
                               onClick={() => setMobileOpen(false)}
                               className={cn(
                                 "rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",

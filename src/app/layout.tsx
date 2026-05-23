@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Noto_Sans_JP } from "next/font/google";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
+import { BRAND } from "@/lib/brand";
 import "./globals.css";
 
 // 単一フォント・必要な weight のみに絞って初期ペイロードを削減
@@ -12,22 +13,23 @@ const notoSansJP = Noto_Sans_JP({
   display: "swap",
 });
 
+const SITE_DESCRIPTION = "営業顧問とのベストマッチを実現するプラットフォーム";
+
 export const metadata: Metadata = {
   metadataBase: new URL(
     process.env.NEXT_PUBLIC_SITE_URL ?? "https://onikana-advisor-matching.vercel.app"
   ),
-  title: "オニカナ顧問マッチング",
-  description:
-    "営業顧問とのベストマッチを実現するプラットフォーム",
+  title: BRAND.full,
+  description: SITE_DESCRIPTION,
   openGraph: {
-    title: "オニカナ顧問マッチング",
-    description: "営業顧問とのベストマッチを実現するプラットフォーム",
+    title: BRAND.full,
+    description: SITE_DESCRIPTION,
     images: [
       {
         url: "/images/ogp.png",
         width: 1200,
         height: 630,
-        alt: "オニカナ顧問マッチング",
+        alt: BRAND.full,
       },
     ],
     type: "website",
@@ -35,8 +37,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "オニカナ顧問マッチング",
-    description: "営業顧問とのベストマッチを実現するプラットフォーム",
+    title: BRAND.full,
+    description: SITE_DESCRIPTION,
     images: ["/images/ogp.png"],
   },
 };

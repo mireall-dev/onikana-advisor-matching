@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { BRAND } from "@/lib/brand";
 
 const features = [
   {
@@ -74,7 +75,7 @@ export default function LandingPage() {
       <header className="sticky top-0 z-50 border-b border-[#E5E7EB] bg-white/80 backdrop-blur-md">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
           <Link href="/" className="font-heading text-lg font-bold text-[#0F569D]">
-            オニカナ顧問マッチング
+            {BRAND.full}
           </Link>
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="sm" render={<Link href="/login" />}>
@@ -114,7 +115,7 @@ export default function LandingPage() {
               <span className="brush-underline">最強の営業力</span>を。
             </h1>
             <p className="mt-6 text-lg text-[#6B7280] leading-relaxed">
-              オニカナ顧問マッチングは、企業と営業顧問をつなぐプラットフォームです。
+              {BRAND.full}は、企業と営業顧問をつなぐプラットフォームです。
               <br className="hidden md:block" />
               あなたの事業に最適な営業のプロフェッショナルが見つかります。
             </p>
@@ -144,7 +145,7 @@ export default function LandingPage() {
         <div className="mx-auto max-w-6xl px-4">
           <div className="text-center mb-12">
             <h2 className="text-2xl md:text-3xl font-bold text-[#1A1A2E]">
-              オニカナの特徴
+              {BRAND.short}の特徴
             </h2>
             <p className="mt-3 text-[#6B7280]">
               ビジネスの成長を加速する3つの仕組み
@@ -274,7 +275,7 @@ export default function LandingPage() {
       <footer className="bg-[#0A3D6E] text-white py-8">
         <div className="mx-auto max-w-6xl px-4">
           <div className="flex flex-col items-center gap-4 md:flex-row md:justify-between">
-            <div className="font-heading text-lg font-bold">オニカナ顧問マッチング</div>
+            <div className="font-heading text-lg font-bold">{BRAND.full}</div>
             <nav className="flex gap-6 text-sm text-white/70">
               <Link href="/login" className="hover:text-white transition-colors">
                 ログイン
@@ -285,7 +286,7 @@ export default function LandingPage() {
             </nav>
           </div>
           <div className="mt-6 border-t border-white/10 pt-6 text-center text-xs text-white/50">
-            &copy; {new Date().getFullYear()} オニカナ顧問マッチング. All rights reserved.
+            &copy; {new Date().getFullYear()} {BRAND.full}. All rights reserved.
           </div>
         </div>
       </footer>

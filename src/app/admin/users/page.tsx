@@ -1,21 +1,8 @@
-"use client";
-
-import { useEffect, useState, useCallback, useMemo } from "react";
-import { useRouter } from "next/navigation";
 import { format } from "date-fns";
-import Image from "next/image";
-import { Loader2, Search } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
-import { useAuth } from "@/hooks/use-auth";
+import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/auth/server";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { EmptyState } from "@/components/shared/states";
 import {
   Table,
   TableBody,
@@ -28,12 +15,10 @@ import { StatusBadge } from "@/components/shared/status-badge";
 import type {
   User,
   UserRole,
-  AdvisorProfile,
   AdvisorStatus,
   ApprovalStatus,
 } from "@/types/database";
-
-type RoleFilter = "all" | UserRole;
+import { UsersFilter, type RoleFilter } from "./_components/users-filter";
 
 interface AdvisorInfo {
   user_id: string;
@@ -53,81 +38,46 @@ const ROLE_LABELS: Record<UserRole, string> = {
   admin: "管理者",
 };
 
-export default function UsersPage() {
-  const router = useRouter();
-  const { user, role, loading: authLoading } = useAuth();
-  const supabase = createClient();
+function parseRole(value: string | undefined): RoleFilter {
+  if (value === "company" || value === "advisor" || value === "admin")
+    return value;
+  return "all";
+}
 
-  const [users, setUsers] = useState<User[]>([]);
-  const [advisorProfiles, setAdvisorProfiles] = useState<AdvisorInfo[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [roleFilter, setRoleFilter] = useState<RoleFilter>("all");
-  const [searchQuery, setSearchQuery] = useState("");
+export default async function UsersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ role?: string; q?: string }>;
+}) {
+  await requireAdmin();
+  const sp = await searchParams;
+  const roleFilter = parseRole(sp.role);
+  const query = (sp.q ?? "").trim();
 
-  const fetchData = useCallback(async () => {
-    setIsLoading(true);
+  const supabase = await createClient();
+  const [usersRes, advisorProfilesRes] = await Promise.all([
+    supabase.from("users").select("*").order("created_at", { ascending: false }),
+    supabase.from("advisor_profiles").select("user_id, status, approval_status"),
+  ]);
 
-    const [usersRes, advisorProfilesRes] = await Promise.all([
-      supabase
-        .from("users")
-        .select("*")
-        .order("created_at", { ascending: false }),
-      supabase
-        .from("advisor_profiles")
-        .select("user_id, status, approval_status"),
-    ]);
+  const users = (usersRes.data ?? []) as User[];
+  const advisorProfiles = (advisorProfilesRes.data ?? []) as AdvisorInfo[];
 
-    if (usersRes.data) {
-      setUsers(usersRes.data as User[]);
-    }
-    if (advisorProfilesRes.data) {
-      setAdvisorProfiles(advisorProfilesRes.data as AdvisorInfo[]);
-    }
+  const advisorMap = new Map<string, AdvisorInfo>();
+  for (const profile of advisorProfiles) {
+    advisorMap.set(profile.user_id, profile);
+  }
 
-    setIsLoading(false);
-  }, [supabase]);
-
-  useEffect(() => {
-    if (authLoading) return;
-    if (!user || role !== "admin") {
-      router.push("/login");
-      return;
-    }
-    fetchData();
-  }, [authLoading, user, role, router, fetchData]);
-
-  const advisorMap = useMemo(() => {
-    const map = new Map<string, AdvisorInfo>();
-    for (const profile of advisorProfiles) {
-      map.set(profile.user_id, profile);
-    }
-    return map;
-  }, [advisorProfiles]);
-
-  const filteredUsers = useMemo(() => {
-    let result = users;
-
-    if (roleFilter !== "all") {
-      result = result.filter((u) => u.role === roleFilter);
-    }
-
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(
-        (u) =>
-          u.display_name.toLowerCase().includes(query) ||
-          u.email.toLowerCase().includes(query)
-      );
-    }
-
-    return result;
-  }, [users, roleFilter, searchQuery]);
-
-  if (authLoading || isLoading) {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <Loader2 className="size-8 animate-spin text-[#0F569D]" />
-      </div>
+  let filteredUsers = users;
+  if (roleFilter !== "all") {
+    filteredUsers = filteredUsers.filter((u) => u.role === roleFilter);
+  }
+  if (query) {
+    const q = query.toLowerCase();
+    filteredUsers = filteredUsers.filter(
+      (u) =>
+        u.display_name.toLowerCase().includes(q) ||
+        u.email.toLowerCase().includes(q)
     );
   }
 
@@ -140,49 +90,17 @@ export default function UsersPage() {
         </p>
       </div>
 
-      {/* Filters */}
-      <div className="animate-fade-in-up mb-6 flex flex-col gap-4 sm:flex-row sm:items-center">
-        <Select
-          value={roleFilter}
-          onValueChange={(val) => { if (val !== null) setRoleFilter(val as RoleFilter); }}
-        >
-          <SelectTrigger className="w-[160px]">
-            <SelectValue placeholder="ロールで絞り込み" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">すべて</SelectItem>
-            <SelectItem value="company">企業</SelectItem>
-            <SelectItem value="advisor">顧問</SelectItem>
-            <SelectItem value="admin">管理者</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-[#6B7280]" />
-          <Input
-            placeholder="名前 or メールで検索"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
-          />
-        </div>
+      <div className="animate-fade-in-up mb-6">
+        <UsersFilter role={roleFilter} query={query} />
       </div>
 
-      {/* Table */}
       <div className="animate-fade-in-up rounded-xl border border-[#E5E7EB] bg-white">
         {filteredUsers.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <Image
-              src="/images/empty-search.png"
-              alt=""
-              width={180}
-              height={180}
-              className="pointer-events-none"
-            />
-            <p className="mt-4 text-sm text-[#6B7280]">
-              該当するユーザーはいません
-            </p>
-          </div>
+          <EmptyState
+            variant="search"
+            title="該当するユーザーはいません"
+            description="フィルター条件を変更してみてください"
+          />
         ) : (
           <Table>
             <TableHeader>
@@ -196,7 +114,8 @@ export default function UsersPage() {
             </TableHeader>
             <TableBody>
               {filteredUsers.map((u) => {
-                const advisorInfo = u.role === "advisor" ? advisorMap.get(u.id) : null;
+                const advisorInfo =
+                  u.role === "advisor" ? advisorMap.get(u.id) : null;
                 const roleBadgeStyle = ROLE_BADGE_STYLES[u.role];
 
                 return (
@@ -204,9 +123,7 @@ export default function UsersPage() {
                     <TableCell className="font-medium text-[#1A1A2E]">
                       {u.display_name}
                     </TableCell>
-                    <TableCell className="text-[#6B7280]">
-                      {u.email}
-                    </TableCell>
+                    <TableCell className="text-[#6B7280]">{u.email}</TableCell>
                     <TableCell>
                       <Badge
                         variant="secondary"
