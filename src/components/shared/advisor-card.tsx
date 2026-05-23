@@ -49,13 +49,17 @@ export function AdvisorCard({ advisor }: AdvisorCardProps) {
               <Badge
                 key={industry}
                 variant="secondary"
-                className="text-xs"
+                className="bg-[#E8F0FE] text-[#0F569D] text-xs"
               >
                 {industry}
               </Badge>
             ))}
             {advisor.industries.length > 3 && (
-              <Badge variant="secondary" className="text-xs">
+              <Badge
+                variant="secondary"
+                className="bg-[#E8F0FE] text-[#0F569D] text-xs"
+                aria-label={`他${advisor.industries.length - 3}件の業界`}
+              >
                 +{advisor.industries.length - 3}
               </Badge>
             )}

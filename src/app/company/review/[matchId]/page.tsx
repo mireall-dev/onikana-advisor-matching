@@ -16,9 +16,9 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RatingStars } from "@/components/shared/rating-stars";
+import { FormField } from "@/components/shared/form-field";
 import { getInitials } from "@/lib/utils";
 import type { Match, User, AdvisorProfile } from "@/types/database";
 
@@ -41,6 +41,7 @@ export default function ReviewPage({
 
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
+  const [ratingError, setRatingError] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     async function fetchMatch() {
@@ -76,9 +77,10 @@ export default function ReviewPage({
     }
 
     if (rating === 0) {
-      toast.error("評価を選択してください。");
+      setRatingError("評価を選択してください");
       return;
     }
+    setRatingError(undefined);
 
     setSubmitting(true);
 
@@ -115,7 +117,7 @@ export default function ReviewPage({
 
       toast.success("レビューを投稿しました。ありがとうございます!");
       router.push("/company/mypage");
-    } catch (err) {
+    } catch {
       toast.error("レビューの投稿に失敗しました。再度お試しください。");
     } finally {
       setSubmitting(false);
@@ -214,17 +216,16 @@ export default function ReviewPage({
             </div>
 
             {/* Form */}
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Rating */}
-              <div>
-                <Label className="mb-2 block text-sm font-medium text-[#1A1A2E]">
-                  評価 <span className="text-[#D42027]">*</span>
-                </Label>
+            <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+              <FormField label="評価" error={ratingError} required>
                 <div className="flex items-center gap-3">
                   <RatingStars
                     rating={rating}
                     interactive
-                    onChange={setRating}
+                    onChange={(v) => {
+                      setRating(v);
+                      if (v > 0) setRatingError(undefined);
+                    }}
                     size="lg"
                   />
                   {rating > 0 && (
@@ -233,25 +234,17 @@ export default function ReviewPage({
                     </span>
                   )}
                 </div>
-              </div>
+              </FormField>
 
-              {/* Comment */}
-              <div>
-                <Label
-                  htmlFor="comment"
-                  className="text-sm font-medium text-[#1A1A2E]"
-                >
-                  コメント
-                </Label>
+              <FormField label="コメント" htmlFor="comment">
                 <Textarea
                   id="comment"
                   rows={5}
                   placeholder="面談の感想やフィードバックをお書きください..."
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
-                  className="mt-1.5"
                 />
-              </div>
+              </FormField>
 
               {/* Submit Button */}
               <Button

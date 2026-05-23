@@ -10,7 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { StatusBadge } from "@/components/shared/status-badge";
-import { EmptyState } from "@/components/shared/states";
+import { EmptyState, ErrorState } from "@/components/shared/states";
 import type { MeetingRequest, RequestStatus, User } from "@/types/database";
 import { RequestStatusFilter, type StatusFilter } from "./_components/status-filter";
 
@@ -44,12 +44,20 @@ export default async function RequestsPage({
   const statusFilter = parseStatus(sp.status);
 
   const supabase = await createClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("meeting_requests")
     .select(
       "*, company:users!company_id(display_name), advisor:users!advisor_id(display_name)"
     )
     .order("created_at", { ascending: false });
+
+  if (error) {
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <ErrorState title="リクエストの取得に失敗しました" />
+      </div>
+    );
+  }
 
   const requests = (data ?? []) as RequestWithUsers[];
   const filteredRequests =

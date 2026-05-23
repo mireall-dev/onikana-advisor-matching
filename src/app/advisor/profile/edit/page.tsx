@@ -18,6 +18,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { FormField } from "@/components/shared/form-field";
+import { LoadingState } from "@/components/shared/states";
 import {
   INDUSTRIES,
   SPECIALTIES,
@@ -210,11 +212,7 @@ export default function AdvisorProfileEditPage() {
   }
 
   if (authLoading || loading) {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <Loader2 className="size-8 animate-spin text-[#0F569D]" />
-      </div>
-    );
+    return <LoadingState label="プロフィールを読み込み中" />;
   }
 
   if (!user) {
@@ -240,35 +238,28 @@ export default function AdvisorProfileEditPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-6">
-              {/* Display Name */}
-              <div className="space-y-2">
-                <Label htmlFor="displayName">表示名</Label>
+              <FormField label="表示名" htmlFor="displayName" error={errors.displayName} required>
                 <Input
                   id="displayName"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
                   placeholder="表示名を入力"
-                  className={errors.displayName ? "border-[#D42027]" : ""}
                 />
-                {errors.displayName && (
-                  <p className="text-[#D42027] text-sm">{errors.displayName}</p>
-                )}
-              </div>
+              </FormField>
 
-              {/* Catchphrase */}
-              <div className="space-y-2">
-                <Label htmlFor="catchphrase">キャッチコピー</Label>
+              <FormField
+                label="キャッチコピー"
+                htmlFor="catchphrase"
+                error={errors.catchphrase}
+                hint="80文字まで"
+              >
                 <Input
                   id="catchphrase"
                   value={catchphrase}
                   onChange={(e) => setCatchphrase(e.target.value)}
                   placeholder="あなたの強みを一言で表現してください"
-                  className={errors.catchphrase ? "border-[#D42027]" : ""}
                 />
-                {errors.catchphrase && (
-                  <p className="text-[#D42027] text-sm">{errors.catchphrase}</p>
-                )}
-              </div>
+              </FormField>
 
               {/* Industries */}
               <div className="space-y-2">
@@ -333,41 +324,35 @@ export default function AdvisorProfileEditPage() {
                 </div>
               </div>
 
-              {/* Career Summary */}
-              <div className="space-y-2">
-                <Label htmlFor="careerSummary">経歴サマリ</Label>
+              <FormField
+                label="経歴サマリ"
+                htmlFor="careerSummary"
+                error={errors.careerSummary}
+              >
                 <Textarea
                   id="careerSummary"
                   value={careerSummary}
                   onChange={(e) => setCareerSummary(e.target.value)}
                   rows={6}
                   placeholder="これまでの経歴や実績を記述してください"
-                  className={errors.careerSummary ? "border-[#D42027]" : ""}
                 />
-                {errors.careerSummary && (
-                  <p className="text-[#D42027] text-sm">{errors.careerSummary}</p>
-                )}
-              </div>
+              </FormField>
 
-              {/* Connections */}
-              <div className="space-y-2">
-                <Label htmlFor="connections">紹介可能な人脈</Label>
+              <FormField
+                label="紹介可能な人脈"
+                htmlFor="connections"
+                error={errors.connections}
+              >
                 <Textarea
                   id="connections"
                   value={connections}
                   onChange={(e) => setConnections(e.target.value)}
                   rows={3}
                   placeholder="紹介可能な人脈について記述してください"
-                  className={errors.connections ? "border-[#D42027]" : ""}
                 />
-                {errors.connections && (
-                  <p className="text-[#D42027] text-sm">{errors.connections}</p>
-                )}
-              </div>
+              </FormField>
 
-              {/* Hourly Rate */}
-              <div className="space-y-2">
-                <Label htmlFor="hourlyRate">参考報酬</Label>
+              <FormField label="参考報酬" htmlFor="hourlyRate" error={errors.hourlyRate}>
                 <div className="flex items-center gap-2">
                   <Input
                     id="hourlyRate"
@@ -375,21 +360,16 @@ export default function AdvisorProfileEditPage() {
                     value={hourlyRate || ""}
                     onChange={(e) =>
                       setHourlyRate(
-                        e.target.value === ""
-                          ? 0
-                          : parseInt(e.target.value, 10)
+                        e.target.value === "" ? 0 : parseInt(e.target.value, 10)
                       )
                     }
                     placeholder="10000"
-                    className={`max-w-48 ${errors.hourlyRate ? "border-[#D42027]" : ""}`}
+                    className="max-w-48"
                     min={0}
                   />
                   <span className="text-sm text-[#6B7280]">円/時間</span>
                 </div>
-                {errors.hourlyRate && (
-                  <p className="text-[#D42027] text-sm">{errors.hourlyRate}</p>
-                )}
-              </div>
+              </FormField>
 
               {/* Achievements */}
               <div className="space-y-3">

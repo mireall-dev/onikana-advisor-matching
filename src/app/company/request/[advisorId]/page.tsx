@@ -10,8 +10,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { FormField } from "@/components/shared/form-field";
 import { getInitials } from "@/lib/utils";
 import type { AdvisorProfile, User } from "@/types/database";
 
@@ -33,6 +33,10 @@ export default function RequestPage({
 
   const [consultationContent, setConsultationContent] = useState("");
   const [preferredDates, setPreferredDates] = useState("");
+  const [errors, setErrors] = useState<{
+    consultationContent?: string;
+    preferredDates?: string;
+  }>({});
 
   useEffect(() => {
     async function fetchAdvisor() {
@@ -65,15 +69,18 @@ export default function RequestPage({
       return;
     }
 
+    const fieldErrors: { consultationContent?: string; preferredDates?: string } = {};
     if (!consultationContent.trim()) {
-      toast.error("相談内容を入力してください。");
-      return;
+      fieldErrors.consultationContent = "相談内容を入力してください";
     }
-
     if (!preferredDates.trim()) {
-      toast.error("希望日程を入力してください。");
+      fieldErrors.preferredDates = "希望日程を入力してください";
+    }
+    if (Object.keys(fieldErrors).length > 0) {
+      setErrors(fieldErrors);
       return;
     }
+    setErrors({});
 
     setSubmitting(true);
 
@@ -132,7 +139,7 @@ export default function RequestPage({
       setRequestId(requestData.id);
       setSubmitted(true);
       toast.success("面談リクエストを送信しました。");
-    } catch (err) {
+    } catch {
       toast.error("リクエストの送信に失敗しました。再度お試しください。");
     } finally {
       setSubmitting(false);
@@ -252,44 +259,38 @@ export default function RequestPage({
             </div>
 
             {/* Form */}
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div>
-                <Label
-                  htmlFor="consultation"
-                  className="text-sm font-medium text-[#1A1A2E]"
-                >
-                  相談内容 <span className="text-[#D42027]">*</span>
-                </Label>
+            <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+              <FormField
+                label="相談内容"
+                htmlFor="consultation"
+                error={errors.consultationContent}
+                required
+              >
                 <Textarea
                   id="consultation"
                   rows={6}
-                  required
                   placeholder="ご相談したい内容を具体的にお書きください..."
                   value={consultationContent}
                   onChange={(e) => setConsultationContent(e.target.value)}
-                  className="mt-1.5"
                 />
-              </div>
+              </FormField>
 
-              <div>
-                <Label
-                  htmlFor="dates"
-                  className="text-sm font-medium text-[#1A1A2E]"
-                >
-                  希望日程 <span className="text-[#D42027]">*</span>
-                </Label>
+              <FormField
+                label="希望日程"
+                htmlFor="dates"
+                error={errors.preferredDates}
+                required
+              >
                 <Textarea
                   id="dates"
                   rows={4}
-                  required
                   placeholder={
                     "第1希望：○月○日 10:00〜\n第2希望：○月○日 14:00〜\n第3希望：○月○日 16:00〜"
                   }
                   value={preferredDates}
                   onChange={(e) => setPreferredDates(e.target.value)}
-                  className="mt-1.5"
                 />
-              </div>
+              </FormField>
 
               <Button
                 type="submit"

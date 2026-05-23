@@ -3,6 +3,7 @@ import { Check, Minus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth/server";
 import { Badge } from "@/components/ui/badge";
+import { ErrorState } from "@/components/shared/states";
 import {
   Table,
   TableBody,
@@ -79,6 +80,14 @@ export default async function MatchesPage() {
       .order("created_at", { ascending: false }),
     supabase.from("payments").select("*"),
   ]);
+
+  if (matchesRes.error || paymentsRes.error) {
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <ErrorState title="マッチングデータの取得に失敗しました" />
+      </div>
+    );
+  }
 
   const matches = (matchesRes.data ?? []) as MatchWithRelations[];
   const payments = (paymentsRes.data ?? []) as Payment[];

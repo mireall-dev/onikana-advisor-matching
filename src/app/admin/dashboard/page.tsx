@@ -27,11 +27,11 @@ interface ActivityItem {
 function getActivityIcon(type: ActivityItem["type"]) {
   switch (type) {
     case "user":
-      return <UserPlus className="size-4 text-[#0F569D]" />;
+      return <UserPlus aria-hidden="true" className="size-5 text-[#0F569D]" />;
     case "request":
-      return <Send className="size-4 text-[#D97706]" />;
+      return <Send aria-hidden="true" className="size-5 text-[#D97706]" />;
     case "match":
-      return <CheckCircle2 className="size-4 text-[#16A34A]" />;
+      return <CheckCircle2 aria-hidden="true" className="size-5 text-[#16A34A]" />;
   }
 }
 
@@ -158,9 +158,9 @@ export default async function AdminDashboardPage() {
         </p>
       </div>
 
-      <div className="stagger-children mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="stagger-children mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <KpiCard title="登録企業数" value={companyCount} icon={Building2} />
-        <Link href="/admin/approvals" className="block">
+        <Link href="/admin/approvals" className="block rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-[#0F569D] focus-visible:ring-offset-2">
           <KpiCard
             title="登録顧問数"
             value={advisorCount}
@@ -174,7 +174,9 @@ export default async function AdminDashboardPage() {
           icon={ClipboardList}
         />
         <KpiCard title="累計マッチング成立数" value={matchCount} icon={Handshake} />
-        <KpiCard title="月間売上" value={formattedRevenue} icon={Banknote} />
+        <div className="sm:col-span-2 lg:col-span-4">
+          <KpiCard title="月間売上" value={formattedRevenue} icon={Banknote} />
+        </div>
       </div>
 
       <div className="animate-fade-in-up">
@@ -191,7 +193,7 @@ export default async function AdminDashboardPage() {
               <ul className="space-y-4">
                 {activities.map((activity) => (
                   <li key={activity.id} className="flex items-start gap-3">
-                    <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-[#F8F9FB]">
+                    <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full bg-[#F8F9FB]">
                       {getActivityIcon(activity.type)}
                     </div>
                     <div className="flex-1 min-w-0">

@@ -2,7 +2,7 @@ import { format } from "date-fns";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth/server";
 import { Badge } from "@/components/ui/badge";
-import { EmptyState } from "@/components/shared/states";
+import { EmptyState, ErrorState } from "@/components/shared/states";
 import {
   Table,
   TableBody,
@@ -59,6 +59,14 @@ export default async function UsersPage({
     supabase.from("users").select("*").order("created_at", { ascending: false }),
     supabase.from("advisor_profiles").select("user_id, status, approval_status"),
   ]);
+
+  if (usersRes.error || advisorProfilesRes.error) {
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <ErrorState title="ユーザーデータの取得に失敗しました" />
+      </div>
+    );
+  }
 
   const users = (usersRes.data ?? []) as User[];
   const advisorProfiles = (advisorProfilesRes.data ?? []) as AdvisorInfo[];

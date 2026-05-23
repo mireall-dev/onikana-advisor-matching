@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth/server";
+import { ErrorState } from "@/components/shared/states";
 import { ApprovalTabs, type ApprovalTab } from "./_components/approval-tabs";
 import {
   ApprovalTable,
@@ -21,10 +22,21 @@ export default async function ApprovalsPage({
   const activeTab = parseTab(sp.tab);
 
   const supabase = await createClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("advisor_profiles")
     .select("*, user:users!user_id(display_name, email)")
     .order("created_at", { ascending: false });
+
+  if (error) {
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <ErrorState
+          title="顧問データの取得に失敗しました"
+          description="ページを再読み込みしてください。"
+        />
+      </div>
+    );
+  }
 
   const advisors = (data ?? []) as AdvisorWithUser[];
 
